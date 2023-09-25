@@ -79,6 +79,7 @@ public class NIOConnection implements Connection {
      * a packet.
      */
     private PacketDeliverer backupDeliverer;
+    private boolean flashClient = false;
     private int majorVersion = 1;
     private int minorVersion = 0;
     private String language = null;
@@ -479,5 +480,15 @@ public class NIOConnection implements Connection {
                 .onMalformedInput(CodingErrorAction.REPORT)
                 .onUnmappableCharacter(CodingErrorAction.REPORT);
         }
+    }
+
+    @Override
+    public boolean isFlashClient() {
+        return flashClient;
+    }
+
+    @Override
+    public void setFlashClient(boolean flashClient) {
+        this.flashClient = flashClient;
     }
 }

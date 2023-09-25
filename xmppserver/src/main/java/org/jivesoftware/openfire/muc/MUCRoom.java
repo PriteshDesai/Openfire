@@ -3837,4 +3837,33 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
     public void groupCreated(Group group, Map params) {
         // ignore
     }
+   
+
+	public void serverScheduleBroadcast(Message msg, String senderUUID) {
+		// TODO Auto-generated method stub
+		msg.setTo(msg.getFrom());
+		msg.setType(Message.Type.groupchat);
+		msg.setFrom(role.getRoleAddress() + "/" + senderUUID);
+		broadcast(msg, role);
+	}
+	
+	public void serverBroadcast(Message msg) {
+//      Message message = new Message();
+//      Log.info("Dhaval Server Broadcast 1408");
+//      message.setType(Message.Type.groupchat);
+//      message.setBody(msg.getBody());
+//      message.setSubject(msg.getSubject());
+		msg.setTo(msg.getFrom());
+		msg.setType(Message.Type.groupchat);
+		msg.setFrom(role.getRoleAddress());
+		broadcast(msg, role);
+	}
+
+	public MUCRole joinRoom(String nickname, String password, HistoryRequest historyRequest, LocalMUCUser user,
+			Presence presence)
+			throws UnauthorizedException, UserAlreadyExistsException, RoomLockedException, ForbiddenException,
+			RegistrationRequiredException, ConflictException, ServiceUnavailableException, NotAcceptableException {
+		// TODO Auto-generated method stub
+		return joinRoom(nickname, password, historyRequest, user.getAddress(), presence);
+	}
 }

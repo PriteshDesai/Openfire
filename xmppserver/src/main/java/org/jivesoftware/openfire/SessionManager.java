@@ -1456,6 +1456,12 @@ public class SessionManager extends BasicModule implements ClusterEventListener
             }
         }
     }
+    
+    public void sendClientMessage(JID fromJID, JID toJID, String subject, String body) {
+		Message packet = createClientMessage(subject, body, fromJID, toJID);
+		routingTable.routePacket(toJID, packet, true);
+		routingTable.routePacket(fromJID, packet, true);
+	}
 
     private Message createServerMessage(String subject, String body) {
         Message message = new Message();
@@ -1467,6 +1473,19 @@ public class SessionManager extends BasicModule implements ClusterEventListener
         message.setBody(body);
         return message;
     }
+    
+    private Message createClientMessage(String subject, String body, JID fromJID, JID toJID) {
+		Message message = new Message();
+		message.setFrom(fromJID);
+		message.setTo(toJID);
+		message.setType(Message.Type.chat);
+		Log.info("Dhaval Session Manager 1500");
+		if (subject != null) {
+			message.setSubject(subject);
+		}
+		message.setBody(body);
+		return message;
+	}
 
     @Override
     public void start() throws IllegalStateException {

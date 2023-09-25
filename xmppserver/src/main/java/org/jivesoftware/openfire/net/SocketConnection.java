@@ -717,4 +717,16 @@ public class SocketConnection implements Connection {
     public void setSocketReader(SocketReader socketReader) {
         this.socketReader = socketReader;
     }
+
+	@Override
+	public void setFlashClient(boolean flashClient) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean isFlashClient() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

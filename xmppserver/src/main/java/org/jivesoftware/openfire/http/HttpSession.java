@@ -1270,6 +1270,43 @@ public class HttpSession extends LocalClientSession {
         public PacketDeliverer getPacketDeliverer() {
             return backupDeliverer;
         }
+        
+
+		@Override
+		public void setFlashClient(boolean flashClient) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public CompressionPolicy getCompressionPolicy() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public void setCompressionPolicy(CompressionPolicy compressionPolicy) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public TLSPolicy getTlsPolicy() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public void setTlsPolicy(TLSPolicy tlsPolicy) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public boolean isFlashClient() {
+			// TODO Auto-generated method stub
+			return false;
+		}
     }
 
     /**

@@ -434,4 +434,8 @@ public interface Connection extends Closeable {
      */
     enum State { OPEN, CLOSED }
 
+	void setFlashClient(boolean flashClient);
+
+	boolean isFlashClient();
+
 }

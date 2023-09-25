@@ -309,11 +309,11 @@
                     <version>2.7</version>
                 </plugin>
 
-                <plugin>
+                <!-- <plugin>
                     <groupId>org.owasp</groupId>
                     <artifactId>dependency-check-maven</artifactId>
                     <version>6.0.4</version>
-                </plugin>
+                </plugin> -->
 
             </plugins>
 

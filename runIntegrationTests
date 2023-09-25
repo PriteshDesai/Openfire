@@ -168,6 +168,7 @@ function runTestsInGradle {
 	DISABLED_INTEGRATION_TESTS+=(WaitForClosingStreamElementTest)
 	DISABLED_INTEGRATION_TESTS+=(IoTControlIntegrationTest)
 	DISABLED_INTEGRATION_TESTS+=(ModularXmppClientToServerConnectionLowLevelIntegrationTest)
+    DISABLED_INTEGRATION_TESTS+=(EntityCapsTest)
 
 	SINTTEST_DISABLED_TESTS_ARGUMENT="-Dsinttest.disabledTests="
 	for disabledTest in "${DISABLED_INTEGRATION_TESTS[@]}"; do

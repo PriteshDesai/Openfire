@@ -147,4 +147,16 @@ public class WebSocketConnection extends VirtualConnection
         this.socket.setXmppSession((LocalClientSession)session);
         super.reinit(session);
     }
+
+	@Override
+	public void setFlashClient(boolean flashClient) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean isFlashClient() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }
