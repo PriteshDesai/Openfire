@@ -27,6 +27,7 @@ import org.jivesoftware.openfire.disco.IQDiscoItemsHandler;
 import org.jivesoftware.openfire.session.ComponentSession;
 import org.jivesoftware.openfire.session.LocalComponentSession;
 import org.jivesoftware.util.JiveGlobals;
+import org.jivesoftware.util.Log;
 import org.jivesoftware.util.cache.Cache;
 import org.jivesoftware.util.cache.CacheFactory;
 import org.jivesoftware.util.cache.CacheUtil;
@@ -43,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Manages the registration and delegation of Components, which includes External Components as well as components
@@ -334,7 +336,7 @@ public class InternalComponentManager extends BasicModule implements ClusterEven
         if (packet != null && packet.getFrom() == null) {
             throw new IllegalArgumentException("Packet with no FROM address was received from component.");
         }
-        
+
         PacketRouter router = XMPPServer.getInstance().getPacketRouter();
         if (router != null) {
             router.route(packet);
@@ -470,10 +472,6 @@ public class InternalComponentManager extends BasicModule implements ClusterEven
      * Returns true if a component is associated to the specified address. Components
      * registered with this JVM or other cluster nodes are going to be considered.
      *
-     * Note that this method will return true only if the full JID exactly matches a
-     * component address, meaning that it returns 'false' for any argument that contains
-     * either a node-part or a resource-part.
-     *
      * @param componentJID the address of the component. This is the complete domain.
      * @return true if a component is associated to the specified address.
      */
@@ -482,9 +480,9 @@ public class InternalComponentManager extends BasicModule implements ClusterEven
             if (componentJID.getNode() != null || componentJID.getResource() != null) {
                 return false;
             }
-    //        if (componentJID.getDomain().lastIndexOf("." + serverDomain) == -1) {
-    //            componentJID = new JID(componentJID.getDomain() + "." + serverDomain);
-    //        }
+            //        if (componentJID.getDomain().lastIndexOf("." + serverDomain) == -1) {
+            //            componentJID = new JID(componentJID.getDomain() + "." + serverDomain);
+            //        }
             return routingTable.hasComponentRoute(componentJID);
         }
     }
@@ -585,7 +583,7 @@ public class InternalComponentManager extends BasicModule implements ClusterEven
                         }
                         try {
                             XMPPServer.getInstance().getIQDiscoItemsHandler().addComponentItem(packet.getFrom()
-                                    .toBareJID(),
+                                            .toBareJID(),
                                     identity.attributeValue("name"));
                             for (Component component : components) {
                                 if (component instanceof ComponentSession.ExternalComponent) {
@@ -620,11 +618,11 @@ public class InternalComponentManager extends BasicModule implements ClusterEven
                                             for (Element element : elements){
                                                 session.setSoftwareVersionData(element.getName(), element.getStringValue());
                                             }
-                                        } 
-                                    }    
+                                        }
+                                    }
 
                                 }
-                            }  
+                            }
                         } catch (Exception e) {
                             Log.error(e.getMessage(), e);
                         }
@@ -637,9 +635,9 @@ public class InternalComponentManager extends BasicModule implements ClusterEven
                                 LocalComponentSession session = externalComponent.getSession();
                                 if(session != null && session.getAddress() == iq.getFrom()){
                                     IQDiscoInfoHandler.setSoftwareVersionDataFormFromDiscoInfo(childElement, session);
-                                }    
+                                }
                             }
-                        }  
+                        }
                     }
                 }
             }
@@ -677,28 +675,28 @@ public class InternalComponentManager extends BasicModule implements ClusterEven
         // would already have had events when the components became available to
         // them.
         componentCache.entrySet().stream()
-            .filter( entrySet -> !entrySet.getValue().contains( XMPPServer.getInstance().getNodeID() ) )
-            .forEach( entry -> {
-                Log.debug( "The local cluster node joined the cluster. The component '{}' is living on one (or more) other cluster nodes, but not ours. Invoking the 'component registered' event, and requesting service info.", entry.getKey());
-                notifyComponentRegistered( entry.getKey() );
-                // Request one of the cluster nodes to sent us a NotifyComponentInfo instance. This async request does not block the current thread, and will update the instance eventually, after which notifications are sent out.
-                CacheFactory.doClusterTask( new RequestComponentInfoNotification( entry.getKey(), XMPPServer.getInstance().getNodeID() ), entry.getValue().iterator().next().toByteArray() );
-            } );
+                .filter( entrySet -> !entrySet.getValue().contains( XMPPServer.getInstance().getNodeID() ) )
+                .forEach( entry -> {
+                    Log.debug( "The local cluster node joined the cluster. The component '{}' is living on one (or more) other cluster nodes, but not ours. Invoking the 'component registered' event, and requesting service info.", entry.getKey());
+                    notifyComponentRegistered( entry.getKey() );
+                    // Request one of the cluster nodes to sent us a NotifyComponentInfo instance. This async request does not block the current thread, and will update the instance eventually, after which notifications are sent out.
+                    CacheFactory.doClusterTask( new RequestComponentInfoNotification( entry.getKey(), XMPPServer.getInstance().getNodeID() ), entry.getValue().iterator().next().toByteArray() );
+                } );
 
         // Additionally, let other cluster nodes know about the components that the local
         // node offers, to allow them to raise events if needed.
         componentCache.entrySet().stream()
-            .filter( entrySet -> entrySet.getValue().contains( XMPPServer.getInstance().getNodeID() ) && entrySet.getValue().size() == 1 )
-            .map( Map.Entry::getKey )
-            .forEach( componentJID -> {
-                Log.debug( "The local cluster node joined the cluster. The component '{}' is living on our cluster node, but not on any others. Invoking the 'component registered' (and if applicable, the 'component info received') event on the remote nodes.", componentJID );
-                CacheFactory.doClusterTask( new NotifyComponentRegistered( componentJID ) );
-                final IQ info = componentInfo.get( componentJID.toString() );
-                if ( info != null )
-                {
-                    CacheFactory.doClusterTask( new NotifyComponentInfo( info ) );
-                }
-            } );
+                .filter( entrySet -> entrySet.getValue().contains( XMPPServer.getInstance().getNodeID() ) && entrySet.getValue().size() == 1 )
+                .map( Map.Entry::getKey )
+                .forEach( componentJID -> {
+                    Log.debug( "The local cluster node joined the cluster. The component '{}' is living on our cluster node, but not on any others. Invoking the 'component registered' (and if applicable, the 'component info received') event on the remote nodes.", componentJID );
+                    CacheFactory.doClusterTask( new NotifyComponentRegistered( componentJID ) );
+                    final IQ info = componentInfo.get( componentJID.toString() );
+                    if ( info != null )
+                    {
+                        CacheFactory.doClusterTask( new NotifyComponentInfo( info ) );
+                    }
+                } );
     }
 
     @Override
@@ -764,8 +762,8 @@ public class InternalComponentManager extends BasicModule implements ClusterEven
 
             modified.get(false).keySet().forEach(removedDomain -> {
                 Log.debug("Cluster node {} just left the cluster, and was the only node on which component '{}' was living. Invoking the 'component unregistered' event on all remaining cluster nodes.",
-                          NodeID.getInstance(nodeID),
-                          removedDomain);
+                        NodeID.getInstance(nodeID),
+                        removedDomain);
                 notifyComponentUnregistered(removedDomain);
 
                 // As we have removed the disappeared components from the clustered cache, other nodes
@@ -795,9 +793,9 @@ public class InternalComponentManager extends BasicModule implements ClusterEven
     private void restoreCacheContent() {
         Log.trace( "Restoring cache content for cache '{}' by adding all component domains that are provided by the local cluster node.", componentCache.getName() );
         routingTable.getComponentsDomains().stream()
-            .map(JID::new)
-            .filter(domain -> routingTable.isLocalRoute(domain))
-            .forEach(domain -> CacheUtil.addValueToMultiValuedCache( componentCache, domain, XMPPServer.getInstance().getNodeID(), HashSet::new ) );
+                .map(JID::new)
+                .filter(domain -> routingTable.isLocalRoute(domain))
+                .forEach(domain -> CacheUtil.addValueToMultiValuedCache( componentCache, domain, XMPPServer.getInstance().getNodeID(), HashSet::new ) );
     }
 
     /**
@@ -859,7 +857,19 @@ public class InternalComponentManager extends BasicModule implements ClusterEven
 
         @Override
         public void process(Packet packet) throws PacketException {
-            Component component = getNextComponent();
+            // Custome Code Change for the Broadcast Feature start
+            Component component;
+            if(packet.getTo().toString().equals("all@conference.openfire.gatherhall.com")) {
+                List<Component> broadCastComponents = components.stream().filter((com) -> com.getName().equals("Broadcast")).collect(Collectors.toList());
+                component = broadCastComponents.get(0);
+            } else {
+                component = getNextComponent();
+                if(component.getName().equals("Broadcast")) {
+                    component = getNextComponent();
+                }
+            }
+            // Custome Code Change for the Broadcast Feature End
+
             component.processPacket(packet);
         }
     }

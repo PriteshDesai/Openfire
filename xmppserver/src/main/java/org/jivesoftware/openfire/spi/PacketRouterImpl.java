@@ -18,6 +18,9 @@ package org.jivesoftware.openfire.spi;
 
 import org.jivesoftware.openfire.*;
 import org.jivesoftware.openfire.container.BasicModule;
+import org.jivesoftware.util.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xmpp.packet.IQ;
 import org.xmpp.packet.Message;
 import org.xmpp.packet.Packet;
@@ -32,6 +35,7 @@ import org.xmpp.packet.Presence;
  * @author Iain Shigeoka
  */
 public class PacketRouterImpl extends BasicModule implements PacketRouter {
+    private static final Logger Log = LoggerFactory.getLogger(PacketRouterImpl.class);
 
     private IQRouter iqRouter;
     private PresenceRouter presenceRouter;
@@ -56,15 +60,19 @@ public class PacketRouterImpl extends BasicModule implements PacketRouter {
     @Override
     public void route(Packet packet) {
         if (packet instanceof Message) {
+            Log.info(" Dhaval Packate is instance of Message :: " + packet.toString());
             route((Message)packet);
         }
         else if (packet instanceof Presence) {
+            Log.info(" Dhaval Packate is instance of Presence :: " + packet.toString());
             route((Presence)packet);
         }
         else if (packet instanceof IQ) {
+            Log.info(" Dhaval Packate is instance of IQ :: " + packet.toString());
             route((IQ)packet);
         }
         else {
+            Log.info(" Dhaval Packate is instance of Illegeal");
             throw new IllegalArgumentException();
         }
     }

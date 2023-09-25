@@ -29,6 +29,7 @@ import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
@@ -126,6 +127,8 @@ import org.xmpp.packet.JID;
 import org.xmpp.packet.Message;
 
 import com.google.common.reflect.ClassPath;
+import java.util.Timer;
+import org.jivesoftware.openfire.muc.spi.OpinionPollExpireTimerTask;
 
 /**
  * The main XMPP server that will load, initialize and start all the server's
@@ -159,6 +162,7 @@ import com.google.common.reflect.ClassPath;
 public class XMPPServer {
 
     private static final Logger logger = LoggerFactory.getLogger(XMPPServer.class);
+    private static final SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
 
     private static XMPPServer instance;
 
@@ -172,18 +176,18 @@ public class XMPPServer {
     private final static Set<String> XML_ONLY_PROPERTIES;
     static {
         final List<String> properties = new ArrayList<>(Arrays.asList(
-            // Admin console network settings
-            "adminConsole.port", "adminConsole.securePort", "adminConsole.interface", "network.interface",
-            // Misc. settings
-            "locale", "fqdn", "setup", ClusterManager.CLUSTER_PROPERTY_NAME,
-            // Database config
-            "connectionProvider.className",
-            "database.defaultProvider.driver", "database.defaultProvider.serverURL", "database.defaultProvider.username",
-            "database.defaultProvider.password", "database.defaultProvider.testSQL", "database.defaultProvider.testBeforeUse",
-            "database.defaultProvider.testAfterUse", "database.defaultProvider.testTimeout", "database.defaultProvider.timeBetweenEvictionRuns",
-            "database.defaultProvider.minIdleTime", "database.defaultProvider.maxWaitTime", "database.defaultProvider.minConnections",
-            "database.defaultProvider.maxConnections", "database.defaultProvider.connectionTimeout", "database.mysql.useUnicode",
-            "database.JNDIProvider.name"
+                // Admin console network settings
+                "adminConsole.port", "adminConsole.securePort", "adminConsole.interface", "network.interface",
+                // Misc. settings
+                "locale", "fqdn", "setup", ClusterManager.CLUSTER_PROPERTY_NAME,
+                // Database config
+                "connectionProvider.className",
+                "database.defaultProvider.driver", "database.defaultProvider.serverURL", "database.defaultProvider.username",
+                "database.defaultProvider.password", "database.defaultProvider.testSQL", "database.defaultProvider.testBeforeUse",
+                "database.defaultProvider.testAfterUse", "database.defaultProvider.testTimeout", "database.defaultProvider.timeBetweenEvictionRuns",
+                "database.defaultProvider.minIdleTime", "database.defaultProvider.maxWaitTime", "database.defaultProvider.minConnections",
+                "database.defaultProvider.maxConnections", "database.defaultProvider.connectionTimeout", "database.mysql.useUnicode",
+                "database.JNDIProvider.name"
         ));
         // JDNI database config
         properties.addAll(Arrays.asList(JNDIDataSourceProvider.jndiPropertyKeys));
@@ -481,32 +485,32 @@ public class XMPPServer {
 
             try {
                 minConnections = Integer.parseInt(
-                    JiveGlobals.getXMLProperty("autosetup.database.defaultProvider.minConnections"));
+                        JiveGlobals.getXMLProperty("autosetup.database.defaultProvider.minConnections"));
             }
             catch (Exception e) {
                 minConnections = 5;
             }
             try {
                 maxConnections = Integer.parseInt(
-                    JiveGlobals.getXMLProperty("autosetup.database.defaultProvider.maxConnections"));
+                        JiveGlobals.getXMLProperty("autosetup.database.defaultProvider.maxConnections"));
             }
             catch (Exception e) {
                 maxConnections = 25;
             }
             try {
                 connectionTimeout = Double.parseDouble(
-                    JiveGlobals.getXMLProperty("autosetup.database.defaultProvider.connectionTimeout"));
+                        JiveGlobals.getXMLProperty("autosetup.database.defaultProvider.connectionTimeout"));
             }
             catch (Exception e) {
                 connectionTimeout = 1.0;
             }
 
             JiveGlobals.setXMLProperty("database.defaultProvider.minConnections",
-                Integer.toString(minConnections));
+                    Integer.toString(minConnections));
             JiveGlobals.setXMLProperty("database.defaultProvider.maxConnections",
-                Integer.toString(maxConnections));
+                    Integer.toString(maxConnections));
             JiveGlobals.setXMLProperty("database.defaultProvider.connectionTimeout",
-                Double.toString(connectionTimeout));
+                    Double.toString(connectionTimeout));
         }
 
         // mark setup as done, so that other things can be written to the DB
@@ -529,22 +533,22 @@ public class XMPPServer {
         // steps from setup-profile-settings.jsp
         if ("default".equals(JiveGlobals.getXMLProperty("autosetup.authprovider.mode", "default"))) {
             JiveGlobals.setXMLProperty("connectionProvider.className",
-                "org.jivesoftware.database.DefaultConnectionProvider");
+                    "org.jivesoftware.database.DefaultConnectionProvider");
 
             JiveGlobals.setProperty(AuthFactory.AUTH_PROVIDER.getKey(), JiveGlobals.getXMLProperty(AuthFactory.AUTH_PROVIDER.getKey(),
-                AuthFactory.AUTH_PROVIDER.getDefaultValue().getName()));
+                    AuthFactory.AUTH_PROVIDER.getDefaultValue().getName()));
             JiveGlobals.setProperty(UserManager.USER_PROVIDER.getKey(), JiveGlobals.getXMLProperty(UserManager.USER_PROVIDER.getKey(),
-                UserManager.USER_PROVIDER.getDefaultValue().getName()));
+                    UserManager.USER_PROVIDER.getDefaultValue().getName()));
             JiveGlobals.setProperty(GroupManager.GROUP_PROVIDER.getKey(), JiveGlobals.getXMLProperty(GroupManager.GROUP_PROVIDER.getKey(),
-                GroupManager.GROUP_PROVIDER.getDefaultValue().getName()));
+                    GroupManager.GROUP_PROVIDER.getDefaultValue().getName()));
             JiveGlobals.setProperty(VCardManager.VCARD_PROVIDER.getKey(), JiveGlobals.getXMLProperty(VCardManager.VCARD_PROVIDER.getKey(),
-                VCardManager.VCARD_PROVIDER.getDefaultValue().getName()));
+                    VCardManager.VCARD_PROVIDER.getDefaultValue().getName()));
             JiveGlobals.setProperty(LockOutManager.LOCKOUT_PROVIDER.getKey(), JiveGlobals.getXMLProperty(LockOutManager.LOCKOUT_PROVIDER.getKey(),
-                LockOutManager.LOCKOUT_PROVIDER.getDefaultValue().getName()));
+                    LockOutManager.LOCKOUT_PROVIDER.getDefaultValue().getName()));
             JiveGlobals.setProperty(SecurityAuditManager.AUDIT_PROVIDER.getKey(), JiveGlobals.getXMLProperty(SecurityAuditManager.AUDIT_PROVIDER.getKey(),
-                SecurityAuditManager.AUDIT_PROVIDER.getDefaultValue().getName()));
+                    SecurityAuditManager.AUDIT_PROVIDER.getDefaultValue().getName()));
             JiveGlobals.setProperty(AdminManager.ADMIN_PROVIDER.getKey(), JiveGlobals.getXMLProperty(AdminManager.ADMIN_PROVIDER.getKey(),
-                AdminManager.ADMIN_PROVIDER.getDefaultValue().getName()));
+                    AdminManager.ADMIN_PROVIDER.getDefaultValue().getName()));
 
             // make configurable?
             JiveGlobals.setProperty("user.scramHashedPasswordOnly", "true");
@@ -561,8 +565,8 @@ public class XMPPServer {
         } catch (Exception e) {
             e.printStackTrace();
             logger.warn("There was an unexpected error encountered when "
-                + "setting the new admin information. Please check your error "
-                + "logs and try to remedy the problem.");
+                    + "setting the new admin information. Please check your error "
+                    + "logs and try to remedy the problem.");
         }
 
         // Import any provisioned users.
@@ -660,7 +664,7 @@ public class XMPPServer {
                         if (isStandAlone()) {
                             // Always restart the HTTP server manager. This covers the case
                             // of changing the ports, as well as generating self-signed certificates.
-                        
+
                             // Wait a short period before shutting down the admin console.
                             // Otherwise, the page that requested the setup finish won't
                             // render properly!
@@ -725,7 +729,7 @@ public class XMPPServer {
             System.out.println(startupBanner);
 
             started = true;
-            
+
             // Notify server listeners that the server has been started
             for (XMPPServerListener listener : listeners) {
                 try {
@@ -738,6 +742,42 @@ public class XMPPServer {
             if (!setupMode) {
                 scanForSystemPropertyClasses();
             }
+            Date today = new Date();
+            Date yesterday = new Date(today.getTime() - (1000 * 60 * 60 * 24));
+            Connection conn = null;
+            PreparedStatement pstmt = null;
+            // UnProcessed scheduler handler.
+            conn = DbConnectionManager.getConnection();
+            pstmt = conn.prepareStatement("select o.pollid, o.expiredat, o.timezone, omr.name from ofpollmaster o "
+                    + "inner join ofmucroom omr on o.ofroomid = omr.roomid where o.isexpired = false and o.expiredat > ?");
+
+            pstmt.setLong(1, yesterday.getTime());
+
+//			logger.info("Get Unprocessed poll data :: " + pstmt.toString());
+
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                String pollId = rs.getString("pollid");
+                String roomOriginalName = rs.getString("name");
+
+                Date expiredAt = new Date(rs.getLong("expiredat"));
+                String timeZone = rs.getString("timezone");
+
+                formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+                String dateString = formatter.format(expiredAt);
+
+                formatter.setTimeZone(TimeZone.getTimeZone(timeZone));
+
+                Timer t = new Timer();
+                OpinionPollExpireTimerTask timeTask = new OpinionPollExpireTimerTask(pollId, roomOriginalName);
+//				logger.info("Poll Id :: " + pollId + " UnProcessed Scheduler Schedule at :: "
+//						+ formatter.parse(dateString));
+                t.schedule(timeTask, formatter.parse(dateString));
+            }
+            pstmt.close();
+            conn.close();
+
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -1173,7 +1213,7 @@ public class XMPPServer {
         private BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
         @Override
         public void run() {
-            try { 
+            try {
                 if (stdin.ready()) {
                     if (EXIT.equalsIgnoreCase(stdin.readLine())) {
                         System.exit(0); // invokes shutdown hook(s)
@@ -1184,7 +1224,7 @@ public class XMPPServer {
             }
         }
     }
-    
+
     /**
      * <p>A thread to ensure the server shuts down no matter what.</p>
      * <p>Spawned when stop() is called in standalone mode, we wait a few
@@ -1269,10 +1309,10 @@ public class XMPPServer {
         logger.info("Shutting down " + modules.size() + " modules ...");
 
         final SimpleTimeLimiter timeLimiter = SimpleTimeLimiter.create( Executors.newSingleThreadExecutor(
-            new ThreadFactoryBuilder()
-                .setDaemon( true )
-                .setNameFormat( "shutdown-thread-%d" )
-                .build() ) );
+                new ThreadFactoryBuilder()
+                        .setDaemon( true )
+                        .setNameFormat( "shutdown-thread-%d" )
+                        .build() ) );
 
         // OF-1996" Get all modules and stop and destroy them. Do this in the reverse order in which the were created.
         // This ensures that the 'most important' / core modules are shut down last, giving other modules the
@@ -1296,7 +1336,7 @@ public class XMPPServer {
 
         modules.clear();
         // Stop the Db connection manager.
-        try {	
+        try {
             DbConnectionManager.destroyConnectionProvider();
         } catch (Exception ex) {
             logger.error("Exception during DB shutdown", ex);
@@ -1865,7 +1905,7 @@ public class XMPPServer {
 
     /**
      * Returns whether or not the server has been started.
-     * 
+     *
      * @return whether or not the server has been started.
      */
     public boolean isStarted() {

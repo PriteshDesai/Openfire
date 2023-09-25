@@ -17,19 +17,28 @@
 package org.jivesoftware.database;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.logging.FileHandler;
+import java.util.logging.SimpleFormatter;
 
 import org.jivesoftware.util.ClassUtils;
 import org.jivesoftware.util.JiveGlobals;
@@ -38,7 +47,8 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Central manager of database connections. All methods are static so that they
- * can be easily accessed throughout the classes in the database package.<p>
+ * can be easily accessed throughout the classes in the database package.
+ * <p>
  *
  * This class also provides a set of utility methods that abstract out
  * operations that may not work on all databases such as setting the max number
@@ -87,22 +97,23 @@ public class DbConnectionManager {
      * Ensures that the connection provider exists and is set
      */
     private static void ensureConnectionProvider() {
-        if (connectionProvider != null) return;
-        
+        if (connectionProvider != null)
+            return;
+
         synchronized (providerLock) {
-            if (connectionProvider != null) return;
-            
+            if (connectionProvider != null)
+                return;
+
             // Attempt to load the connection provider classname as a Jive property.
             String className = JiveGlobals.getXMLProperty("connectionProvider.className");
             if (className != null) {
                 // Attempt to load the class.
                 try {
                     Class conClass = ClassUtils.forName(className);
-                    setConnectionProvider((ConnectionProvider)conClass.newInstance());
+                    setConnectionProvider((ConnectionProvider) conClass.newInstance());
                 } catch (Exception e) {
-                    Log.warn("Failed to create the " +
-                            "connection provider specified by connection" +
-                            "Provider.className. Using the default pool.", e);
+                    Log.warn("Failed to create the " + "connection provider specified by connection"
+                            + "Provider.className. Using the default pool.", e);
                     setConnectionProvider(new DefaultConnectionProvider());
                 }
             } else {
@@ -117,49 +128,53 @@ public class DbConnectionManager {
      * @param errors A map populated with errors if they occur.
      * @return true if the test was successful, otherwise false.
      */
-    public static boolean testConnection( Map<String,String> errors ) {
+    public static boolean testConnection(Map<String, String> errors) {
         boolean success = true;
-        try ( final Connection con = DbConnectionManager.getConnection() )
-        {
+        try (final Connection con = DbConnectionManager.getConnection()) {
             // See if the Jive db schema is installed.
-            try
-            {
+            try {
                 Statement stmt = con.createStatement();
                 // Pick an arbitrary table to see if it's there.
-                stmt.executeQuery( "SELECT * FROM ofID" );
+                stmt.executeQuery("SELECT * FROM ofID");
                 stmt.close();
-            }
-            catch ( SQLException sqle )
-            {
+            } catch (SQLException sqle) {
                 success = false;
-                Log.error( "The Openfire database schema does not appear to be installed.", sqle );
-                errors.put( "general", "The Openfire database schema does not "
-                    + "appear to be installed. Follow the installation guide to "
-                    + "fix this error." );
+                Log.error("The Openfire database schema does not appear to be installed.", sqle);
+                errors.put("general", "The Openfire database schema does not "
+                        + "appear to be installed. Follow the installation guide to " + "fix this error.");
             }
-        }
-        catch ( SQLException exception )
-        {
+        } catch (SQLException exception) {
             success = false;
-            Log.error( "Unable to connect to the database.", exception );
-            errors.put( "general", "A connection to the database could not be "
-                + "made. View the error message by opening the "
-                + "\"" + File.separator + "logs" + File.separator + "error.log\" log "
-                + "file, then go back to fix the problem." );
+            Log.error("Unable to connect to the database.", exception);
+            errors.put("general",
+                    "A connection to the database could not be " + "made. View the error message by opening the " + "\""
+                            + File.separator + "logs" + File.separator + "error.log\" log "
+                            + "file, then go back to fix the problem.");
         }
         return success;
     }
 
     /**
-     * Returns a database connection from the currently active connection
-     * provider. An exception will be thrown if no connection was found.
-     * (auto commit is set to true).
+     * Returns a database connection from the currently active connection provider.
+     * An exception will be thrown if no connection was found. (auto commit is set
+     * to true).
      *
      * @return a connection.
      * @throws SQLException if a SQL exception occurs or no connection was found.
      */
     public static Connection getConnection() throws SQLException {
         ensureConnectionProvider();
+
+//		try {
+//			String filePath = "/home/ubuntu/jaydeep/errorlog/errorLogFile.txt";
+//
+//			String appendText = new Date() +": Database load is called\n";
+//
+//			appendUsingFileWriter(filePath, appendText);
+//
+//		} catch (Exception e) {
+//			Log.error(e.getMessage());
+//		}
 
         Integer currentRetryCount = 0;
         Integer maxRetries = JiveGlobals.getXMLProperty(SETTING_DATABASE_MAX_RETRIES, 10);
@@ -171,22 +186,55 @@ public class DbConnectionManager {
                 Connection con = connectionProvider.getConnection();
                 if (con != null) {
                     // Got one, lets hand it off.
-                    // Usually profiling is not enabled. So we return a normal 
+                    // Usually profiling is not enabled. So we return a normal
                     // connection unless profiling is enabled. If yes, wrap the
                     // connection with a profiled connection.
                     if (!profilingEnabled) {
                         return con;
                     } else {
-                        return new ProfiledConnection(con); 
+                        return new ProfiledConnection(con);
                     }
                 }
             } catch (SQLException e) {
                 // TODO distinguish recoverable from non-recoverable exceptions.
+
+                try {
+                    // =======> added the custom logic for the add log in the logged file mentioned START.
+                    String filePath = "/home/ubuntu/jaydeep/errorlog/errorLogFile.txt";
+                    String appendText = "********************************************************\n"
+                            + new Date() +": Error Generate for Database the Pool time out\n"
+                            + e.getMessage() +
+                            "\n********************************************************\n";
+                    appendUsingFileWriter(filePath, appendText);
+                    // ======> added the custom logic for the add log in the logged file mentioned END.
+
+
+                    // =======> added the custom logic for Pool size clear START.
+                    connectionProvider.destroy();
+                    connectionProvider.start();
+                    // =======> added the custom logic for Pool size clear END.
+
+
+                    // added the custom logic for open connection after pool reset START.
+                    Connection con = connectionProvider.getConnection();
+                    if (con != null) {
+                        if (!profilingEnabled) {
+                            return con;
+                        } else {
+                            return new ProfiledConnection(con);
+                        }
+                    }
+                    // added the custom logic for open connection after pool reset END.
+                } catch (Exception e1) {
+                    Log.error(e1.getMessage());
+                }
+
                 lastException = e;
-                Log.info("Unable to get a connection from the database pool " +
-                        "(attempt " + currentRetryCount + " out of " + maxRetries + ").", e);
+                Log.info("Unable to get a connection from the database pool " + "(attempt " + currentRetryCount
+                        + " out of " + maxRetries + ").", e);
+
             }
-            
+
             currentRetryCount++;
             loopIfNoConnection = currentRetryCount <= maxRetries;
             if (loopIfNoConnection) {
@@ -194,21 +242,49 @@ public class DbConnectionManager {
                     Thread.sleep(retryWait);
                 } catch (InterruptedException ex) {
                     String msg = "Interrupted waiting for DB connection";
-                    Log.info(msg,ex);
+                    Log.info(msg, ex);
                     Thread.currentThread().interrupt();
-                    throw new SQLException(msg,ex);
+                    throw new SQLException(msg, ex);
                 }
             }
         } while (loopIfNoConnection);
-        
-        throw new SQLException("ConnectionManager.getConnection() " +
-                "failed to obtain a connection after " + currentRetryCount + " retries. " +
-                "The exception from the last attempt is as follows: " + lastException);
+
+        throw new SQLException(
+                "ConnectionManager.getConnection() " + "failed to obtain a connection after " + currentRetryCount
+                        + " retries. " + "The exception from the last attempt is as follows: " + lastException);
     }
 
     /**
-     * Returns a Connection from the currently active connection provider that
-     * is ready to participate in transactions (auto commit is set to false).
+     * Use FileWriter when number of write operations are less
+     *
+     * @param filePath
+     * @param text
+     * @param noOfLines
+     */
+    private static void appendUsingFileWriter(String filePath, String text) {
+        File file = new File(filePath);
+        if (file.exists()) {
+            FileWriter fr = null;
+            try {
+                // Below constructor argument decides whether to append or override
+                fr = new FileWriter(file, true);
+                fr.write(text);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    fr.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns a Connection from the currently active connection provider that is
+     * ready to participate in transactions (auto commit is set to false).
      *
      * @return a connection with transactions enabled.
      * @throws SQLException if a SQL exception occurs.
@@ -222,25 +298,24 @@ public class DbConnectionManager {
     }
 
     /**
-     * Closes a PreparedStatement and Connection. However, it first rolls back the transaction or
-     * commits it depending on the value of <code>abortTransaction</code>.
+     * Closes a PreparedStatement and Connection. However, it first rolls back the
+     * transaction or commits it depending on the value of
+     * <code>abortTransaction</code>.
      *
-     * @param pstmt the prepared statement to close.
-     * @param con the connection to close.
+     * @param pstmt            the prepared statement to close.
+     * @param con              the connection to close.
      * @param abortTransaction true if the transaction should be rolled back.
      */
-    public static void closeTransactionConnection(PreparedStatement pstmt, Connection con,
-            boolean abortTransaction)
-    {
+    public static void closeTransactionConnection(PreparedStatement pstmt, Connection con, boolean abortTransaction) {
         closeStatement(pstmt);
         closeTransactionConnection(con, abortTransaction);
     }
 
     /**
-     * Closes a Connection. However, it first rolls back the transaction or
-     * commits it depending on the value of <code>abortTransaction</code>.
+     * Closes a Connection. However, it first rolls back the transaction or commits
+     * it depending on the value of <code>abortTransaction</code>.
      *
-     * @param con the connection to close.
+     * @param con              the connection to close.
      * @param abortTransaction true if the transaction should be rolled back.
      */
     public static void closeTransactionConnection(Connection con, boolean abortTransaction) {
@@ -249,19 +324,16 @@ public class DbConnectionManager {
             try {
                 if (abortTransaction) {
                     con.rollback();
-                }
-                else {
+                } else {
                     con.commit();
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 Log.error(e.getMessage(), e);
             }
             // Reset the connection to auto-commit mode.
             try {
-                con.setAutoCommit(true);              
-            }
-            catch (Exception e) {
+                con.setAutoCommit(true);
+            } catch (Exception e) {
                 Log.error(e.getMessage(), e);
             }
         }
@@ -269,8 +341,8 @@ public class DbConnectionManager {
     }
 
     /**
-     * Closes a result set. This method should be called within the finally section of
-     * your database logic, as in the following example:
+     * Closes a result set. This method should be called within the finally section
+     * of your database logic, as in the following example:
      *
      * <pre>
      *  public void doSomething(Connection con) {
@@ -288,24 +360,24 @@ public class DbConnectionManager {
      *          ConnectionManager.closeResultSet(rs);
      *          ConnectionManager.closePreparedStatement(pstmt);
      *      }
-     * } </pre>
+     * }
+     * </pre>
      *
      * @param rs the result set to close.
      */
     public static void closeResultSet(ResultSet rs) {
         if (rs != null) {
             try {
-                    rs.close();
-                }
-            catch (SQLException e) {
+                rs.close();
+            } catch (SQLException e) {
                 Log.error(e.getMessage(), e);
             }
         }
     }
 
     /**
-     * Closes a statement. This method should be called within the finally section of
-     * your database logic, as in the following example:
+     * Closes a statement. This method should be called within the finally section
+     * of your database logic, as in the following example:
      *
      * <pre>
      *  public void doSomething(Connection con) {
@@ -320,7 +392,8 @@ public class DbConnectionManager {
      *      finally {
      *          ConnectionManager.closeStatement(pstmt);
      *      }
-     * } </pre>
+     * }
+     * </pre>
      *
      * @param stmt the statement.
      */
@@ -328,16 +401,15 @@ public class DbConnectionManager {
         if (stmt != null) {
             try {
                 stmt.close();
-            }       
-            catch (Exception e) {
+            } catch (Exception e) {
                 Log.error(e.getMessage(), e);
             }
         }
     }
-    
+
     /**
-     * Closes a statement and a result set. This method should be called within the finally section of
-     * your database logic, as in the following example:
+     * Closes a statement and a result set. This method should be called within the
+     * finally section of your database logic, as in the following example:
      *
      * <pre>
      *  public void doSomething(Connection con) {
@@ -354,15 +426,17 @@ public class DbConnectionManager {
      *      finally {
      *          ConnectionManager.closeStatement(rs, pstmt);
      *      }
-     * } </pre>
+     * }
+     * </pre>
      *
-     * @param rs the result set to close
+     * @param rs   the result set to close
      * @param stmt the statement.
      */
     public static void closeStatement(ResultSet rs, Statement stmt) {
         closeResultSet(rs);
         closeStatement(stmt);
     }
+
     /**
      * Closes a statement. This method should be called within the try section of
      * your database logic when you reuse a statement. It may throws an exception,
@@ -381,20 +455,20 @@ public class DbConnectionManager {
      *          ...
      *      }
      *      ...
-     * } </pre>
+     * }
+     * </pre>
      *
      * @param pstmt the statement to close.
      * @throws SQLException if an exception occurs closing the statement
      */
-    public static void fastcloseStmt(PreparedStatement pstmt) throws SQLException
-    {
+    public static void fastcloseStmt(PreparedStatement pstmt) throws SQLException {
         pstmt.close();
     }
-        
+
     /**
-     * Closes a statement and a result set. This method should be called within the try section of
-     * your database logic when you reuse a statement. It may throw an exception,
-     * so don't place it in the finally section.<br>
+     * Closes a statement and a result set. This method should be called within the
+     * try section of your database logic when you reuse a statement. It may throw
+     * an exception, so don't place it in the finally section.<br>
      * Example:
      *
      * <pre>
@@ -409,22 +483,23 @@ public class DbConnectionManager {
      *          ...
      *      }
      *      ...
-     * } </pre>
+     * }
+     * </pre>
      *
-     * @param rs The result set to close
+     * @param rs    The result set to close
      * @param pstmt the statement to close.
-     * @throws SQLException if an exception occurs closing the result set or statement
+     * @throws SQLException if an exception occurs closing the result set or
+     *                      statement
      */
-    public static void fastcloseStmt(ResultSet rs, PreparedStatement pstmt) throws SQLException
-    {
+    public static void fastcloseStmt(ResultSet rs, PreparedStatement pstmt) throws SQLException {
         rs.close();
         pstmt.close();
     }
 
     /**
-     * Closes a result set, statement and database connection (returning the connection to
-     * the connection pool). This method should be called within the finally section of
-     * your database logic, as in the following example:
+     * Closes a result set, statement and database connection (returning the
+     * connection to the connection pool). This method should be called within the
+     * finally section of your database logic, as in the following example:
      *
      * <pre>
      * Connection con = null;
@@ -441,11 +516,12 @@ public class DbConnectionManager {
      * }
      * finally {
      *     ConnectionManager.closeConnection(rs, pstmt, con);
-     * }</pre>
+     * }
+     * </pre>
      *
-     * @param rs the result set.
+     * @param rs   the result set.
      * @param stmt the statement.
-     * @param con the connection.
+     * @param con  the connection.
      */
     public static void closeConnection(ResultSet rs, Statement stmt, Connection con) {
         closeResultSet(rs);
@@ -454,9 +530,10 @@ public class DbConnectionManager {
     }
 
     /**
-     * Closes a statement and database connection (returning the connection to
-     * the connection pool). This method should be called within the finally section of
+     * Closes a statement and database connection (returning the connection to the
+     * connection pool). This method should be called within the finally section of
      * your database logic, as in the following example:
+     *
      * <pre>
      * Connection con = null;
      * PrepatedStatment pstmt = null;
@@ -470,10 +547,11 @@ public class DbConnectionManager {
      * }
      * finally {
      *     DbConnectionManager.closeConnection(pstmt, con);
-     * }</pre>
+     * }
+     * </pre>
      *
      * @param stmt the statement.
-     * @param con the connection.
+     * @param con  the connection.
      */
     public static void closeConnection(Statement stmt, Connection con) {
         closeStatement(stmt);
@@ -481,10 +559,11 @@ public class DbConnectionManager {
     }
 
     /**
-     * Closes a database connection (returning the connection to the connection pool). Any
-     * statements associated with the connection should be closed before calling this method.
-     * This method should be called within the finally section of your database logic, as
-     * in the following example:
+     * Closes a database connection (returning the connection to the connection
+     * pool). Any statements associated with the connection should be closed before
+     * calling this method. This method should be called within the finally section
+     * of your database logic, as in the following example:
+     *
      * <pre>
      * Connection con = null;
      * try {
@@ -496,47 +575,44 @@ public class DbConnectionManager {
      * }
      * finally {
      *     DbConnectionManager.closeConnection(con);
-     * }</pre>
+     * }
+     * </pre>
      *
      * @param con the connection.
      */
     public static void closeConnection(Connection con) {
         if (con != null) {
             try {
-               con.close();
-            }
-            catch (Exception e) {
+                con.close();
+            } catch (Exception e) {
                 Log.error(e.getMessage(), e);
             }
         }
     }
 
     /**
-     * Creates a scroll insensitive PreparedStatement if the JDBC driver supports it, or a normal
-     * PreparedStatement otherwise.
+     * Creates a scroll insensitive PreparedStatement if the JDBC driver supports
+     * it, or a normal PreparedStatement otherwise.
      *
      * @param con the database connection.
      * @param sql the SQL to create the PreparedStatement with.
      * @return a PreparedStatement
      * @throws java.sql.SQLException if an error occurs.
      */
-    public static PreparedStatement createScrollablePreparedStatement(Connection con, String sql)
-            throws SQLException {
+    public static PreparedStatement createScrollablePreparedStatement(Connection con, String sql) throws SQLException {
         if (isScrollResultsSupported()) {
-            return con.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE,
-                    ResultSet.CONCUR_READ_ONLY);
-        }
-        else {
+            return con.prepareStatement(sql, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+        } else {
             return con.prepareStatement(sql);
         }
     }
 
     /**
-     * Scrolls forward in a result set the specified number of rows. If the JDBC driver
-     * supports the feature, the cursor will be moved directly. Otherwise, we scroll
-     * through results one by one manually by calling {@code rs.next()}.
+     * Scrolls forward in a result set the specified number of rows. If the JDBC
+     * driver supports the feature, the cursor will be moved directly. Otherwise, we
+     * scroll through results one by one manually by calling {@code rs.next()}.
      *
-     * @param rs the ResultSet object to scroll.
+     * @param rs        the ResultSet object to scroll.
      * @param rowNumber the row number to scroll forward to.
      * @throws SQLException if an error occurs.
      */
@@ -551,12 +627,11 @@ public class DbConnectionManager {
                 try {
                     rs.setFetchDirection(ResultSet.FETCH_FORWARD);
                     rs.relative(rowNumber);
-                }
-                catch (SQLException e) {
+                } catch (SQLException e) {
                     // TODO change "Error ..." to "Disabling ..."
                     Log.error("Error in JDBC method rs.relative(rowNumber).", e);
-                    //Log.error("Disabling JDBC method rs.relative(rowNumber).", e);
-                    //scrollResultsSupported = false;
+                    // Log.error("Disabling JDBC method rs.relative(rowNumber).", e);
+                    // scrollResultsSupported = false;
                     for (int i = 0; i < rowNumber; i++) {
                         rs.next();
                     }
@@ -572,10 +647,11 @@ public class DbConnectionManager {
     }
 
     /**
-     * Limits the number of the results in a result set (to startIndex + numResults).
-     * Sets the fetch size depending on the features of the JDBC driver and make
-     * sure that the size is not bigger than 500. 
-     * @param pstmt the PreparedStatement
+     * Limits the number of the results in a result set (to startIndex +
+     * numResults). Sets the fetch size depending on the features of the JDBC driver
+     * and make sure that the size is not bigger than 500.
+     *
+     * @param pstmt      the PreparedStatement
      * @param startIndex the first row with interesting data
      * @param numResults the number of interesting results
      */
@@ -583,31 +659,28 @@ public class DbConnectionManager {
         final int MAX_FETCHRESULTS = 500;
         final int maxRows = startIndex + numResults;
         setMaxRows(pstmt, maxRows);
-        if (pstmt_fetchSizeSupported)
-        {
+        if (pstmt_fetchSizeSupported) {
             if (scrollResultsSupported) {
                 setFetchSize(pstmt, Math.min(MAX_FETCHRESULTS, numResults));
-            }
-            else {
-                setFetchSize(pstmt, Math.min(MAX_FETCHRESULTS, maxRows));            
+            } else {
+                setFetchSize(pstmt, Math.min(MAX_FETCHRESULTS, maxRows));
             }
         }
     }
-    
+
     /**
-     * Sets the number of rows that the JDBC driver should buffer at a time.
-     * The operation is automatically bypassed if Openfire knows that the
-     * the JDBC driver or database doesn't support it.
+     * Sets the number of rows that the JDBC driver should buffer at a time. The
+     * operation is automatically bypassed if Openfire knows that the the JDBC
+     * driver or database doesn't support it.
      *
-     * @param pstmt the PreparedStatement to set the fetch size for.
+     * @param pstmt     the PreparedStatement to set the fetch size for.
      * @param fetchSize the fetchSize.
      */
     public static void setFetchSize(PreparedStatement pstmt, int fetchSize) {
         if (pstmt_fetchSizeSupported) {
             try {
                 pstmt.setFetchSize(fetchSize);
-            }
-            catch (Throwable t) {
+            } catch (Throwable t) {
                 // Ignore. Exception may happen if the driver doesn't support
                 // this operation and we didn't set meta-data correctly.
                 // However, it is a good idea to update the meta-data so that
@@ -620,10 +693,10 @@ public class DbConnectionManager {
     }
 
     /**
-     * Returns the current connection provider. The only case in which this
-     * method should be called is if more information about the current
-     * connection provider is needed. Database connections should always be
-     * obtained by calling the getConnection method of this class.
+     * Returns the current connection provider. The only case in which this method
+     * should be called is if more information about the current connection provider
+     * is needed. Database connections should always be obtained by calling the
+     * getConnection method of this class.
      *
      * @return the connection provider.
      */
@@ -632,10 +705,10 @@ public class DbConnectionManager {
     }
 
     /**
-     * Sets the connection provider. The old provider (if it exists) is shut
-     * down before the new one is started. A connection provider <b>should
-     * not</b> be started before being passed to the connection manager
-     * because the manager will call the start() method automatically.
+     * Sets the connection provider. The old provider (if it exists) is shut down
+     * before the new one is started. A connection provider <b>should not</b> be
+     * started before being passed to the connection manager because the manager
+     * will call the start() method automatically.
      *
      * @param provider the ConnectionProvider that the manager should obtain
      *                 connections from.
@@ -656,14 +729,11 @@ public class DbConnectionManager {
 
                 // Check to see if the database schema needs to be upgraded.
                 schemaManager.checkOpenfireSchema(con);
-            }
-            catch (MissingResourceException mre) {
+            } catch (MissingResourceException mre) {
                 Log.error(mre.getMessage());
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 Log.error(e.getMessage(), e);
-            }
-            finally {
+            } finally {
                 closeConnection(con);
             }
         }
@@ -688,11 +758,11 @@ public class DbConnectionManager {
 
     /**
      * Retrives a large text column from a result set, automatically performing
-     * streaming if the JDBC driver requires it. This is necessary because
-     * different JDBC drivers have different capabilities and methods for
-     * retrieving large text values.
+     * streaming if the JDBC driver requires it. This is necessary because different
+     * JDBC drivers have different capabilities and methods for retrieving large
+     * text values.
      *
-     * @param rs the ResultSet to retrieve the text field from.
+     * @param rs          the ResultSet to retrieve the text field from.
      * @param columnIndex the column in the ResultSet of the text field.
      * @return the String value of the text field.
      * @throws SQLException if an SQL exception occurs.
@@ -712,53 +782,49 @@ public class DbConnectionManager {
                 }
                 value = out.toString();
                 out.close();
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 Log.error(e.getMessage(), e);
                 throw new SQLException("Failed to load text field");
             }
             return value;
-        }
-        else {
+        } else {
             return rs.getString(columnIndex);
         }
     }
 
     /**
-     * Sets a large text column in a result set, automatically performing
-     * streaming if the JDBC driver requires it. This is necessary because
-     * different JDBC drivers have different capabilities and methods for
-     * setting large text values.
+     * Sets a large text column in a result set, automatically performing streaming
+     * if the JDBC driver requires it. This is necessary because different JDBC
+     * drivers have different capabilities and methods for setting large text
+     * values.
      *
-     * @param pstmt the PreparedStatement to set the text field in.
+     * @param pstmt          the PreparedStatement to set the text field in.
      * @param parameterIndex the index corresponding to the text field.
-     * @param value the String to set.
+     * @param value          the String to set.
      * @throws SQLException if an SQL exception occurs.
      */
-    public static void setLargeTextField(PreparedStatement pstmt, int parameterIndex,
-                                         String value) throws SQLException {
+    public static void setLargeTextField(PreparedStatement pstmt, int parameterIndex, String value)
+            throws SQLException {
         if (isStreamTextRequired()) {
             Reader bodyReader;
             try {
                 bodyReader = new StringReader(value);
                 pstmt.setCharacterStream(parameterIndex, bodyReader, value.length());
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 Log.error(e.getMessage(), e);
                 throw new SQLException("Failed to set text field.");
             }
             // Leave bodyReader open so that the db can read from it. It *should*
             // be garbage collected after it's done without needing to call close.
-        }
-        else {
+        } else {
             pstmt.setString(parameterIndex, value);
         }
     }
 
     /**
      * Sets the max number of rows that should be returned from executing a
-     * statement. The operation is automatically bypassed if Jive knows that the
-     * the JDBC driver or database doesn't support it.
+     * statement. The operation is automatically bypassed if Jive knows that the the
+     * JDBC driver or database doesn't support it.
      *
      * @param stmt    the Statement to set the max number of rows for.
      * @param maxRows the max number of rows to return.
@@ -767,8 +833,7 @@ public class DbConnectionManager {
         if (isMaxRowsSupported()) {
             try {
                 stmt.setMaxRows(maxRows);
-            }
-            catch (Throwable t) {
+            } catch (Throwable t) {
                 // Ignore. Exception may happen if the driver doesn't support
                 // this operation and we didn't set meta-data correctly.
                 // However, it is a good idea to update the meta-data so that
@@ -781,19 +846,18 @@ public class DbConnectionManager {
     }
 
     /**
-     * Sets the number of rows that the JDBC driver should buffer at a time.
-     * The operation is automatically bypassed if Jive knows that the
-     * the JDBC driver or database doesn't support it.
+     * Sets the number of rows that the JDBC driver should buffer at a time. The
+     * operation is automatically bypassed if Jive knows that the the JDBC driver or
+     * database doesn't support it.
      *
-     * @param rs the ResultSet to set the fetch size for.
+     * @param rs        the ResultSet to set the fetch size for.
      * @param fetchSize the fetchSize.
      */
     public static void setFetchSize(ResultSet rs, int fetchSize) {
         if (isFetchSizeSupported()) {
             try {
                 rs.setFetchSize(fetchSize);
-            }
-            catch (Throwable t) {
+            } catch (Throwable t) {
                 // Ignore. Exception may happen if the driver doesn't support
                 // this operation and we didn't set meta-data correctly.
                 // However, it is a good idea to update the meta-data so that
@@ -816,8 +880,8 @@ public class DbConnectionManager {
     }
 
     /**
-     * Uses a connection from the database to set meta data information about
-     * what different JDBC drivers and databases support.
+     * Uses a connection from the database to set meta data information about what
+     * different JDBC drivers and databases support.
      *
      * @param con the connection.
      * @throws SQLException if an SQL exception occurs.
@@ -832,10 +896,8 @@ public class DbConnectionManager {
         // workaround for DB2 JDBC driver, which throws an exception on
         // the method call.
         try {
-            scrollResultsSupported = metaData.supportsResultSetType(
-                    ResultSet.TYPE_SCROLL_INSENSITIVE);
-        }
-        catch (Exception e) {
+            scrollResultsSupported = metaData.supportsResultSetType(ResultSet.TYPE_SCROLL_INSENSITIVE);
+        } catch (Exception e) {
             scrollResultsSupported = false;
         }
         // Supports batch updates
@@ -852,59 +914,60 @@ public class DbConnectionManager {
         String driverName = metaData.getDriverName().toLowerCase();
 
         // Oracle properties.
-        if (dbName.contains("oracle")) {
+        if (dbName.indexOf("oracle") != -1) {
             databaseType = DatabaseType.oracle;
             streamTextRequired = true;
-            // scrollResultsSupported = false; /* comment and test this, it should be supported since 10g */
+            scrollResultsSupported = false; /* TODO comment and test this, it should be supported since 10g */
             // The i-net AUGURO JDBC driver
-            if (driverName.contains("auguro")) {
+            if (driverName.indexOf("auguro") != -1) {
                 streamTextRequired = false;
                 fetchSizeSupported = true;
                 maxRowsSupported = false;
             }
         }
         // Postgres properties
-        else if (dbName.contains("postgres")) {
+        else if (dbName.indexOf("postgres") != -1) {
             databaseType = DatabaseType.postgresql;
             // Postgres blows, so disable scrolling result sets.
             scrollResultsSupported = false;
             fetchSizeSupported = false;
         }
         // Interbase properties
-        else if (dbName.contains("interbase")) {
+        else if (dbName.indexOf("interbase") != -1) {
             databaseType = DatabaseType.interbase;
             fetchSizeSupported = false;
             maxRowsSupported = false;
         }
         // SQLServer
-        else if (dbName.contains("sql server")) {
+        else if (dbName.indexOf("sql server") != -1) {
             databaseType = DatabaseType.sqlserver;
             // JDBC driver i-net UNA properties
-            if (driverName.contains("una")) {
+            if (driverName.indexOf("una") != -1) {
                 fetchSizeSupported = true;
                 maxRowsSupported = false;
             }
         }
         // MySQL properties
-        else if (dbName.contains("mysql") || dbName.contains("maria")) {
+        else if (dbName.indexOf("mysql") != -1) {
             databaseType = DatabaseType.mysql;
-            // transactionsSupported = false; /* comment and test this, it should be supported since 5.0 */
+            transactionsSupported = false; /* TODO comment and test this, it should be supported since 5.0 */
         }
         // HSQL properties
-        else if (dbName.contains("hsql")) {
+        else if (dbName.indexOf("hsql") != -1) {
             databaseType = DatabaseType.hsqldb;
-            // scrollResultsSupported = false; /* comment and test this, it should be supported since 1.7.2 */
+            // scrollResultsSupported = false; /* comment and test this, it should be
+            // supported since 1.7.2 */
         }
         // DB2 properties.
-        else if (dbName.contains("db2")) {
+        else if (dbName.indexOf("db2") != 1) {
             databaseType = DatabaseType.db2;
         }
     }
 
     /**
      * Returns the database type. The possible types are constants of the
-     * DatabaseType class. Any database that doesn't have its own constant
-     * falls into the "Other" category.
+     * DatabaseType class. Any database that doesn't have its own constant falls
+     * into the "Other" category.
      *
      * @return the database type.
      */
@@ -913,9 +976,8 @@ public class DbConnectionManager {
     }
 
     /**
-     * Returns true if connection profiling is turned on. You can collect
-     * profiling statistics by using the static methods of the ProfiledConnection
-     * class.
+     * Returns true if connection profiling is turned on. You can collect profiling
+     * statistics by using the static methods of the ProfiledConnection class.
      *
      * @return true if connection profiling is enabled.
      */
@@ -924,9 +986,8 @@ public class DbConnectionManager {
     }
 
     /**
-     * Turns connection profiling on or off. You can collect profiling
-     * statistics by using the static methods of the ProfiledConnection
-     * class.
+     * Turns connection profiling on or off. You can collect profiling statistics by
+     * using the static methods of the ProfiledConnection class.
      *
      * @param enable true to enable profiling; false to disable.
      */
@@ -957,7 +1018,7 @@ public class DbConnectionManager {
     public static boolean isFetchSizeSupported() {
         return fetchSizeSupported;
     }
-    
+
     public static boolean isPstmtFetchSizeSupported() {
         return pstmt_fetchSizeSupported;
     }
@@ -985,24 +1046,20 @@ public class DbConnectionManager {
     public static String getTestSQL(String driver) {
         if (driver == null) {
             return "select 1";
-        }
-        else if (driver.contains("db2")) {
+        } else if (driver.contains("db2")) {
             return "select 1 from sysibm.sysdummy1";
-        }
-        else if (driver.contains("oracle")) {
+        } else if (driver.contains("oracle")) {
             return "select 1 from dual";
-        }
-        else {
+        } else {
             return "select 1";
         }
     }
 
     /**
-     * A class that identifies the type of the database that Jive is connected
-     * to. In most cases, we don't want to make any database specific calls
-     * and have no need to know the type of database we're using. However,
-     * there are certain cases where it's critical to know the database for
-     * performance reasons.
+     * A class that identifies the type of the database that Jive is connected to.
+     * In most cases, we don't want to make any database specific calls and have no
+     * need to know the type of database we're using. However, there are certain
+     * cases where it's critical to know the database for performance reasons.
      */
     public enum DatabaseType {
 
@@ -1024,7 +1081,7 @@ public class DbConnectionManager {
 
         private final HashSet<String> identifiers;
 
-        DatabaseType(final String ... identifiers) {
+        DatabaseType(final String... identifiers) {
             this.identifiers = new HashSet<>(Arrays.asList(identifiers));
         }
 

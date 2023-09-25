@@ -66,23 +66,23 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
     private static final Logger Log = LoggerFactory.getLogger(MUCRoom.class);
 
     public static final SystemProperty<Boolean> JOIN_PRESENCE_ENABLE = SystemProperty.Builder.ofType(Boolean.class)
-        .setKey("xmpp.muc.join.presence")
-        .setDynamic(true)
-        .setDefaultValue(true)
-        .build();
+            .setKey("xmpp.muc.join.presence")
+            .setDynamic(true)
+            .setDefaultValue(true)
+            .build();
 
     private static final SystemProperty<Duration> SELF_PRESENCE_TIMEOUT = SystemProperty.Builder.ofType(Duration.class)
-        .setKey("xmpp.muc.join.self-presence-timeout")
-        .setDynamic(true)
-        .setDefaultValue(Duration.ofSeconds( 2 ))
-        .setChronoUnit(ChronoUnit.MILLIS)
-        .build();
+            .setKey("xmpp.muc.join.self-presence-timeout")
+            .setDynamic(true)
+            .setDefaultValue(Duration.ofSeconds( 2 ))
+            .setChronoUnit(ChronoUnit.MILLIS)
+            .build();
 
     public static final SystemProperty<Boolean> ALLOWPM_BLOCKALL = SystemProperty.Builder.ofType( Boolean.class )
-        .setKey("xmpp.muc.allowpm.blockall")
-        .setDefaultValue(false)
-        .setDynamic(true)
-        .build();
+            .setKey("xmpp.muc.allowpm.blockall")
+            .setDefaultValue(false)
+            .setDynamic(true)
+            .build();
 
     /**
      * The service hosting the room.
@@ -551,8 +551,8 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
         }
 
         final List<MUCRole> roles = occupants.stream()
-            .filter(mucRole -> mucRole.getNickname().equalsIgnoreCase(nickname))
-            .collect(Collectors.toList());
+                .filter(mucRole -> mucRole.getNickname().equalsIgnoreCase(nickname))
+                .collect(Collectors.toList());
 
         if (roles.isEmpty()) {
             throw new UserNotFoundException("Unable to find occupant with nickname '" + nickname + "' in room '" + name + "'");
@@ -571,8 +571,8 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
     public List<MUCRole> getOccupantsByBareJID(JID jid) throws UserNotFoundException
     {
         final List<MUCRole> roles = occupants.stream()
-            .filter(mucRole -> mucRole.getUserAddress().asBareJID().equals(jid))
-            .collect(Collectors.toList());
+                .filter(mucRole -> mucRole.getUserAddress().asBareJID().equals(jid))
+                .collect(Collectors.toList());
 
         if (roles.isEmpty()) {
             throw new UserNotFoundException();
@@ -591,8 +591,8 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
     public MUCRole getOccupantByFullJID(JID jid)
     {
         final List<MUCRole> roles = occupants.stream()
-            .filter(mucRole -> mucRole.getUserAddress().equals(jid))
-            .collect(Collectors.toList());
+                .filter(mucRole -> mucRole.getUserAddress().equals(jid))
+                .collect(Collectors.toList());
 
         switch (roles.size()) {
             case 0: return null;
@@ -630,13 +630,13 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
     public boolean hasOccupant(String nickname)
     {
         return occupants.stream()
-            .anyMatch(mucRole -> mucRole.getNickname().equalsIgnoreCase(nickname));
+                .anyMatch(mucRole -> mucRole.getNickname().equalsIgnoreCase(nickname));
     }
 
     public boolean hasOccupant(JID jid)
     {
         return occupants.stream()
-            .anyMatch(mucRole -> mucRole.getUserAddress().equals(jid) || mucRole.getUserAddress().asBareJID().equals(jid));
+                .anyMatch(mucRole -> mucRole.getUserAddress().equals(jid) || mucRole.getUserAddress().asBareJID().equals(jid));
     }
 
     /**
@@ -747,8 +747,8 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
                              @Nullable HistoryRequest historyRequest,
                              @Nonnull JID realAddress,
                              @Nonnull Presence presence )
-        throws UnauthorizedException, UserAlreadyExistsException, RoomLockedException, ForbiddenException,
-        RegistrationRequiredException, ConflictException, ServiceUnavailableException, NotAcceptableException
+            throws UnauthorizedException, UserAlreadyExistsException, RoomLockedException, ForbiddenException,
+            RegistrationRequiredException, ConflictException, ServiceUnavailableException, NotAcceptableException
     {
         Log.debug( "User '{}' attempts to join room '{}' using nickname '{}'.", realAddress, this.getJID(), nickname );
         MUCRole joinRole;
@@ -890,19 +890,19 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
     public boolean alreadyJoinedWithThisNick(@Nonnull final JID realJID, @Nonnull final String nickname)
     {
         return occupants.stream()
-            .anyMatch(mucRole -> mucRole.getUserAddress().equals(realJID) && mucRole.getNickname().equalsIgnoreCase(nickname));
+                .anyMatch(mucRole -> mucRole.getUserAddress().equals(realJID) && mucRole.getNickname().equalsIgnoreCase(nickname));
     }
 
     /**
      * Checks all preconditions for joining a room. If one of them fails, an Exception is thrown.
      */
     private void checkJoinRoomPreconditions(
-        @Nonnull final JID realAddress,
-        @Nonnull final String nickname,
-        @Nonnull final MUCRole.Affiliation affiliation,
-        @Nullable final String password,
-        @Nonnull final Presence presence)
-        throws ServiceUnavailableException, RoomLockedException, UserAlreadyExistsException, UnauthorizedException, ConflictException, NotAcceptableException, ForbiddenException, RegistrationRequiredException
+            @Nonnull final JID realAddress,
+            @Nonnull final String nickname,
+            @Nonnull final MUCRole.Affiliation affiliation,
+            @Nullable final String password,
+            @Nonnull final Presence presence)
+            throws ServiceUnavailableException, RoomLockedException, UserAlreadyExistsException, UnauthorizedException, ConflictException, NotAcceptableException, ForbiddenException, RegistrationRequiredException
     {
         Log.debug( "Checking all preconditions for user '{}' to join room '{}'.", realAddress, this.getJID() );
 
@@ -1228,29 +1228,29 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
      */
     public void leaveRoom(@Nonnull final MUCRole leaveRole) {
         sendLeavePresenceToExistingOccupants(leaveRole)
-            // DO NOT use 'thenRunAsync', as that will cause issues with clustering (it uses an executor that overrides the contextClassLoader, causing ClassNotFound exceptions in ClusterExternalizableUtil).
-            .thenRun( () -> {
-                // Remove occupant from room and destroy room if empty and not persistent
-                removeOccupantRole(leaveRole);
+                // DO NOT use 'thenRunAsync', as that will cause issues with clustering (it uses an executor that overrides the contextClassLoader, causing ClassNotFound exceptions in ClusterExternalizableUtil).
+                .thenRun( () -> {
+                    // Remove occupant from room and destroy room if empty and not persistent
+                    removeOccupantRole(leaveRole);
 
-                // TODO Implement this: If the room owner becomes unavailable for any reason before
-                // submitting the form (e.g., a lost connection), the service will receive a presence
-                // stanza of type "unavailable" from the owner to the room@service/nick or room@service
-                // (or both). The service MUST then destroy the room, sending a presence stanza of type
-                // "unavailable" from the room to the owner including a <destroy/> element and reason
-                // (if provided) as defined under the "Destroying a Room" use case.
+                    // TODO Implement this: If the room owner becomes unavailable for any reason before
+                    // submitting the form (e.g., a lost connection), the service will receive a presence
+                    // stanza of type "unavailable" from the owner to the room@service/nick or room@service
+                    // (or both). The service MUST then destroy the room, sending a presence stanza of type
+                    // "unavailable" from the room to the owner including a <destroy/> element and reason
+                    // (if provided) as defined under the "Destroying a Room" use case.
 
-                // Remove the room from the service only if there are no more occupants and the room is
-                // not persistent
-                if (getOccupants().isEmpty()) {
-                    if (!isPersistent()) {
-                        endTime = System.currentTimeMillis();
-                        destroyRoom(null, "Removal of empty, non-persistent room.");
+                    // Remove the room from the service only if there are no more occupants and the room is
+                    // not persistent
+                    if (getOccupants().isEmpty()) {
+                        if (!isPersistent()) {
+                            endTime = System.currentTimeMillis();
+                            destroyRoom(null, "Removal of empty, non-persistent room.");
+                        }
+                        // Update the date when the last occupant left the room
+                        setEmptyDate(new Date());
                     }
-                    // Update the date when the last occupant left the room
-                    setEmptyDate(new Date());
-                }
-            });
+                });
     }
 
     /**
@@ -1399,7 +1399,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
         send(message, senderRole);
         // Fire event that message was received by the room
         MUCEventDispatcher.messageReceived(getRole().getRoleAddress(), senderRole.getUserAddress(),
-            senderRole.getNickname(), message);
+                senderRole.getNickname(), message);
     }
 
     /**
@@ -1551,8 +1551,8 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
         // we need to wait for an echo back, before the message can be broadcast locally. The 'propagate' method will
         // return a CompletableFuture object that is completed as soon as processing can continue.
         return fmucHandler.propagate(stanza, sender)
-            // DO NOT use 'thenRunAsync', as that will cause issues with clustering (it uses an executor that overrides the contextClassLoader, causing ClassNotFound exceptions in ClusterExternalizableUtil).
-            .thenRun(() -> broadcast(stanza, isJoinPresence));
+                // DO NOT use 'thenRunAsync', as that will cause issues with clustering (it uses an executor that overrides the contextClassLoader, causing ClassNotFound exceptions in ClusterExternalizableUtil).
+                .thenRun(() -> broadcast(stanza, isJoinPresence));
     }
 
     /**
@@ -1695,12 +1695,12 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
         // we need to wait for an echo back, before the message can be broadcast locally. The 'propagate' method will
         // return a CompletableFuture object that is completed as soon as processing can continue.
         fmucHandler.propagate( message, sender )
-            // DO NOT use 'thenRunAsync', as that will cause issues with clustering (it uses an executor that overrides the contextClassLoader, causing ClassNotFound exceptions in ClusterExternalizableUtil).
-            .thenRun( () -> {
-                    // Broadcast message to occupants connected to this domain.
-                    broadcast(message);
-                }
-            );
+                // DO NOT use 'thenRunAsync', as that will cause issues with clustering (it uses an executor that overrides the contextClassLoader, causing ClassNotFound exceptions in ClusterExternalizableUtil).
+                .thenRun( () -> {
+                            // Broadcast message to occupants connected to this domain.
+                            broadcast(message);
+                        }
+                );
     }
 
     /**
@@ -1802,7 +1802,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
      *         if trying to ban an owner or an administrator.
      */
     private List<Presence> changeOccupantAffiliation(MUCRole senderRole, JID jid, MUCRole.Affiliation newAffiliation, MUCRole.Role newRole)
-        throws NotAllowedException {
+            throws NotAllowedException {
         List<Presence> presences = new ArrayList<>();
         // Get all the roles (i.e. occupants) of this user based on his/her bare JID
         JID bareJID = jid.asBareJID();
@@ -1928,11 +1928,11 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
             }
             // Update the DB if the room is persistent
             MUCPersistenceManager.saveAffiliationToDB(
-                this,
-                bareJID,
-                null,
-                MUCRole.Affiliation.owner,
-                oldAffiliation);
+                    this,
+                    bareJID,
+                    null,
+                    MUCRole.Affiliation.owner,
+                    oldAffiliation);
         }
         // apply the affiliation change, assigning a new affiliation
         // based on the group(s) of the affected user(s)
@@ -1954,7 +1954,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
      * @throws ConflictException If the room was going to lose all its owners.
      */
     public List<Presence> addAdmin(JID jid, MUCRole sendRole) throws ForbiddenException,
-        ConflictException {
+            ConflictException {
         final JID bareJID = jid.asBareJID();
         synchronized (this) {
             MUCRole.Affiliation oldAffiliation = MUCRole.Affiliation.none;
@@ -1983,11 +1983,11 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
             }
             // Update the DB if the room is persistent
             MUCPersistenceManager.saveAffiliationToDB(
-                this,
-                bareJID,
-                null,
-                MUCRole.Affiliation.admin,
-                oldAffiliation);
+                    this,
+                    bareJID,
+                    null,
+                    MUCRole.Affiliation.admin,
+                    oldAffiliation);
         }
         // apply the affiliation change, assigning a new affiliation
         // based on the group(s) of the affected user(s)
@@ -2011,22 +2011,22 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
      *             the room was going to lose all its owners.
      */
     public List<Presence> addMember(JID jid, String nickname, MUCRole sendRole)
-        throws ForbiddenException, ConflictException {
+            throws ForbiddenException, ConflictException {
         final JID bareJID = jid.asBareJID();
         synchronized (this) {
             MUCRole.Affiliation oldAffiliation = (members.containsKey(bareJID) ?
-                MUCRole.Affiliation.member : MUCRole.Affiliation.none);
+                    MUCRole.Affiliation.member : MUCRole.Affiliation.none);
             if (isMembersOnly()) {
                 if (!canOccupantsInvite()) {
                     if (MUCRole.Affiliation.admin != sendRole.getAffiliation()
-                        && MUCRole.Affiliation.owner != sendRole.getAffiliation()) {
+                            && MUCRole.Affiliation.owner != sendRole.getAffiliation()) {
                         throw new ForbiddenException();
                     }
                 }
             }
             else {
                 if (MUCRole.Affiliation.admin != sendRole.getAffiliation()
-                    && MUCRole.Affiliation.owner != sendRole.getAffiliation()) {
+                        && MUCRole.Affiliation.owner != sendRole.getAffiliation()) {
                     throw new ForbiddenException();
                 }
             }
@@ -2062,11 +2062,11 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
             }
             // Update the DB if the room is persistent
             MUCPersistenceManager.saveAffiliationToDB(
-                this,
-                bareJID,
-                nickname,
-                MUCRole.Affiliation.member,
-                oldAffiliation);
+                    this,
+                    bareJID,
+                    nickname,
+                    MUCRole.Affiliation.member,
+                    oldAffiliation);
         }
 
         // apply the affiliation change, assigning a new affiliation
@@ -2091,13 +2091,13 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
      * @throws ConflictException If the room was going to lose all its owners.
      */
     public List<Presence> addOutcast(JID jid, String reason, MUCRole senderRole)
-        throws NotAllowedException, ForbiddenException, ConflictException {
+            throws NotAllowedException, ForbiddenException, ConflictException {
         final JID bareJID = jid.asBareJID();
 
         synchronized (this) {
             MUCRole.Affiliation oldAffiliation = MUCRole.Affiliation.none;
             if (MUCRole.Affiliation.admin != senderRole.getAffiliation()
-                && MUCRole.Affiliation.owner != senderRole.getAffiliation()) {
+                    && MUCRole.Affiliation.owner != senderRole.getAffiliation()) {
                 throw new ForbiddenException();
             }
             // Check that the room always has an owner
@@ -2124,11 +2124,11 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
             }
             // Update the DB if the room is persistent
             MUCPersistenceManager.saveAffiliationToDB(
-                this,
-                bareJID,
-                null,
-                MUCRole.Affiliation.outcast,
-                oldAffiliation);
+                    this,
+                    bareJID,
+                    null,
+                    MUCRole.Affiliation.outcast,
+                    oldAffiliation);
         }
         // apply the affiliation change, assigning a new affiliation
         // based on the group(s) of the affected user(s)
@@ -2156,7 +2156,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
         boolean jidWasAffiliated = false;
         synchronized (this) {
             if (MUCRole.Affiliation.admin != senderRole.getAffiliation()
-                && MUCRole.Affiliation.owner != senderRole.getAffiliation()) {
+                    && MUCRole.Affiliation.owner != senderRole.getAffiliation()) {
                 throw new ForbiddenException();
             }
             // Check that the room always has an owner
@@ -2392,7 +2392,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
      */
     public void changeSubject(Message packet, MUCRole role) throws ForbiddenException {
         if ((canOccupantsChangeSubject() && role.getRole().compareTo(MUCRole.Role.visitor) < 0) ||
-            MUCRole.Role.moderator == role.getRole()) {
+                MUCRole.Role.moderator == role.getRole()) {
             // Set the new subject to the room
             subject = packet.getSubject();
             MUCPersistenceManager.updateRoomSubject(this);
@@ -2443,10 +2443,10 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
      * @throws CannotBeInvitedException (Optionally) If the user being invited does not have access to the room
      */
     public void sendInvitation(JID to, String reason, MUCRole senderRole, List<Element> extensions)
-        throws ForbiddenException, CannotBeInvitedException {
+            throws ForbiddenException, CannotBeInvitedException {
         if (!isMembersOnly() || canOccupantsInvite()
-            || MUCRole.Affiliation.admin == senderRole.getAffiliation()
-            || MUCRole.Affiliation.owner == senderRole.getAffiliation()) {
+                || MUCRole.Affiliation.admin == senderRole.getAffiliation()
+                || MUCRole.Affiliation.owner == senderRole.getAffiliation()) {
             // If the room is not members-only OR if the room is members-only and anyone can send
             // invitations or the sender is an admin or an owner, then send the invitation
             Message message = new Message();
@@ -2609,8 +2609,8 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
      */
     public Collection<MUCRole> getModerators() {
         final List<MUCRole> roles = occupants.stream()
-            .filter(mucRole -> mucRole.getRole() == MUCRole.Role.moderator)
-            .collect(Collectors.toList());
+                .filter(mucRole -> mucRole.getRole() == MUCRole.Role.moderator)
+                .collect(Collectors.toList());
         return Collections.unmodifiableList(roles);
     }
 
@@ -2637,7 +2637,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
      */
     public Presence addModerator(JID jid, MUCRole senderRole) throws ForbiddenException {
         if (MUCRole.Affiliation.admin != senderRole.getAffiliation()
-            && MUCRole.Affiliation.owner != senderRole.getAffiliation()) {
+                && MUCRole.Affiliation.owner != senderRole.getAffiliation()) {
             throw new ForbiddenException();
         }
         // Update the presence with the new role and inform all occupants
@@ -2662,7 +2662,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
      * @throws ForbiddenException If the user is not allowed to grant participant privileges.
      */
     public Presence addParticipant(JID jid, String reason, MUCRole senderRole)
-        throws NotAllowedException, ForbiddenException {
+            throws NotAllowedException, ForbiddenException {
         if (MUCRole.Role.moderator != senderRole.getRole()) {
             throw new ForbiddenException();
         }
@@ -2670,7 +2670,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
         Presence updatedPresence = changeOccupantRole(jid, MUCRole.Role.participant);
         if (updatedPresence != null) {
             Element frag = updatedPresence.getChildElement(
-                "x", "http://jabber.org/protocol/muc#user");
+                    "x", "http://jabber.org/protocol/muc#user");
             // Add the reason why the user was granted voice
             if (reason != null && reason.trim().length() > 0) {
                 frag.element("item").addElement("reason").setText(reason);
@@ -2692,7 +2692,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
      * @throws ForbiddenException if the user is not a moderator.
      */
     public Presence addVisitor(JID jid, MUCRole senderRole) throws NotAllowedException,
-        ForbiddenException {
+            ForbiddenException {
         if (MUCRole.Role.moderator != senderRole.getRole()) {
             throw new ForbiddenException();
         }
@@ -2711,7 +2711,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
      * @throws NotAllowedException Thrown if trying to ban an owner or an administrator.
      */
     public Presence kickOccupant(JID jid, JID actorJID, String actorNickname, String reason)
-        throws NotAllowedException {
+            throws NotAllowedException {
         // Update the presence with the new role and inform all occupants
         Presence updatedPresence = changeOccupantRole(jid, MUCRole.Role.none);
 
@@ -2728,7 +2728,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
 
         if (updatedPresence != null) {
             Element frag = updatedPresence.getChildElement(
-                "x", "http://jabber.org/protocol/muc#user");
+                    "x", "http://jabber.org/protocol/muc#user");
 
             // Add the status code 307 that indicates that the user was kicked
             frag.addElement("status").addAttribute("code", "307");
@@ -2769,7 +2769,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
                 // Add the actor's JID that kicked this user from the room
                 if (actorJID!=null && actorJID.toString().length() > 0) {
                     Element frag = kickPresence.getChildElement(
-                        "x", "http://jabber.org/protocol/muc#user");
+                            "x", "http://jabber.org/protocol/muc#user");
                     Element actor = frag.element("item").addElement("actor");
                     actor.addAttribute("jid", actorJID.toBareJID());
                     if (nick!=null) {
@@ -2956,7 +2956,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
                 if (occupant.getAffiliation().compareTo(MUCRole.Affiliation.member) > 0) {
                     try {
                         presences.add(kickOccupant(occupant.getRoleAddress(), null, null,
-                            LocaleUtils.getLocalizedString("muc.roomIsNowMembersOnly")));
+                                LocaleUtils.getLocalizedString("muc.roomIsNowMembersOnly")));
                     }
                     catch (NotAllowedException e) {
                         Log.error(e.getMessage(), e);
@@ -3370,7 +3370,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
         else {
             this.lockedTime = 0;
         }
-        MUCPersistenceManager.updateRoomLock(this);
+        MUCPersistenceManager.updateRoomLock((LocalMUCRoom) this);
     }
 
     /**
@@ -3408,7 +3408,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
      * @throws ConflictException If the room was going to lose all its owners.
      */
     public List<Presence> addAdmins(List<JID> newAdmins, MUCRole senderRole)
-        throws ForbiddenException, ConflictException {
+            throws ForbiddenException, ConflictException {
         List<Presence> answer = new ArrayList<>(newAdmins.size());
         for (JID newAdmin : newAdmins) {
             final JID bareJID = newAdmin.asBareJID();
@@ -3429,7 +3429,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
      * @throws ForbiddenException If the user is not allowed to modify the owner list.
      */
     public List<Presence> addOwners(List<JID> newOwners, MUCRole senderRole)
-        throws ForbiddenException {
+            throws ForbiddenException {
         List<Presence> answer = new ArrayList<>(newOwners.size());
         for (JID newOwner : newOwners) {
             final JID bareJID = newOwner.asBareJID();
@@ -3446,41 +3446,41 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
      */
     public void saveToDB() {
         // Make the room persistent
-        MUCPersistenceManager.saveToDB(this);
+        MUCPersistenceManager.saveToDB((LocalMUCRoom) this);
         if (!savedToDB) {
             // Set that the room is now in the DB
             savedToDB = true;
             // Save the existing room owners to the DB
             for (JID owner : owners) {
                 MUCPersistenceManager.saveAffiliationToDB(
-                    this,
-                    owner,
-                    null,
-                    MUCRole.Affiliation.owner,
-                    MUCRole.Affiliation.none);
+                        this,
+                        owner,
+                        null,
+                        MUCRole.Affiliation.owner,
+                        MUCRole.Affiliation.none);
             }
             // Save the existing room admins to the DB
             for (JID admin : admins) {
                 MUCPersistenceManager.saveAffiliationToDB(
-                    this,
-                    admin,
-                    null,
-                    MUCRole.Affiliation.admin,
-                    MUCRole.Affiliation.none);
+                        this,
+                        admin,
+                        null,
+                        MUCRole.Affiliation.admin,
+                        MUCRole.Affiliation.none);
             }
             // Save the existing room members to the DB
             for (JID bareJID : members.keySet()) {
                 MUCPersistenceManager.saveAffiliationToDB(this, bareJID, members.get(bareJID),
-                    MUCRole.Affiliation.member, MUCRole.Affiliation.none);
+                        MUCRole.Affiliation.member, MUCRole.Affiliation.none);
             }
             // Save the existing room outcasts to the DB
             for (JID outcast : outcasts) {
                 MUCPersistenceManager.saveAffiliationToDB(
-                    this,
-                    outcast,
-                    null,
-                    MUCRole.Affiliation.outcast,
-                    MUCRole.Affiliation.none);
+                        this,
+                        outcast,
+                        null,
+                        MUCRole.Affiliation.outcast,
+                        MUCRole.Affiliation.none);
             }
         }
     }
@@ -3704,12 +3704,12 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
     @Override
     public String toString() {
         return "MUCRoom{" +
-            "roomID=" + roomID +
-            ", name='" + name + '\'' +
-            ", occupants=" + occupants.size() +
-            ", mucService=" + mucService +
-            ", savedToDB=" + savedToDB +
-            '}';
+                "roomID=" + roomID +
+                ", name='" + name + '\'' +
+                ", occupants=" + occupants.size() +
+                ", mucService=" + mucService +
+                ", savedToDB=" + savedToDB +
+                '}';
     }
 
     /*
@@ -3728,12 +3728,12 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
         final int prime = 31;
         int result = 1;
         result = prime * result
-            + ((creationDate == null) ? 0 : creationDate.hashCode());
+                + ((creationDate == null) ? 0 : creationDate.hashCode());
         result = prime * result
-            + ((description == null) ? 0 : description.hashCode());
+                + ((description == null) ? 0 : description.hashCode());
         result = prime * result + ((name == null) ? 0 : name.hashCode());
         result = prime * result
-            + ((password == null) ? 0 : password.hashCode());
+                + ((password == null) ? 0 : password.hashCode());
         result = prime * result + (int) (roomID ^ (roomID >>> 32));
         return result;
     }
@@ -3837,33 +3837,33 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
     public void groupCreated(Group group, Map params) {
         // ignore
     }
-   
 
-	public void serverScheduleBroadcast(Message msg, String senderUUID) {
-		// TODO Auto-generated method stub
-		msg.setTo(msg.getFrom());
-		msg.setType(Message.Type.groupchat);
-		msg.setFrom(role.getRoleAddress() + "/" + senderUUID);
-		broadcast(msg, role);
-	}
-	
-	public void serverBroadcast(Message msg) {
+
+    public void serverScheduleBroadcast(Message msg, String senderUUID) {
+        // TODO Auto-generated method stub
+        msg.setTo(msg.getFrom());
+        msg.setType(Message.Type.groupchat);
+        msg.setFrom(role.getRoleAddress() + "/" + senderUUID);
+        broadcast(msg, role);
+    }
+
+    public void serverBroadcast(Message msg) {
 //      Message message = new Message();
 //      Log.info("Dhaval Server Broadcast 1408");
 //      message.setType(Message.Type.groupchat);
 //      message.setBody(msg.getBody());
 //      message.setSubject(msg.getSubject());
-		msg.setTo(msg.getFrom());
-		msg.setType(Message.Type.groupchat);
-		msg.setFrom(role.getRoleAddress());
-		broadcast(msg, role);
-	}
+        msg.setTo(msg.getFrom());
+        msg.setType(Message.Type.groupchat);
+        msg.setFrom(role.getRoleAddress());
+        broadcast(msg, role);
+    }
 
-	public MUCRole joinRoom(String nickname, String password, HistoryRequest historyRequest, LocalMUCUser user,
-			Presence presence)
-			throws UnauthorizedException, UserAlreadyExistsException, RoomLockedException, ForbiddenException,
-			RegistrationRequiredException, ConflictException, ServiceUnavailableException, NotAcceptableException {
-		// TODO Auto-generated method stub
-		return joinRoom(nickname, password, historyRequest, user.getAddress(), presence);
-	}
+    public MUCRole joinRoom(String nickname, String password, HistoryRequest historyRequest, LocalMUCUser user,
+                            Presence presence)
+            throws UnauthorizedException, UserAlreadyExistsException, RoomLockedException, ForbiddenException,
+            RegistrationRequiredException, ConflictException, ServiceUnavailableException, NotAcceptableException {
+        // TODO Auto-generated method stub
+        return joinRoom(nickname, password, historyRequest, user.getAddress(), presence);
+    }
 }

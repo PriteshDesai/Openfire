@@ -70,33 +70,33 @@ public class OutgoingSessionPromise {
     private static final Logger Log = LoggerFactory.getLogger(OutgoingSessionPromise.class);
 
     public static final SystemProperty<Integer> QUEUE_MAX_THREADS = SystemProperty.Builder.ofType(Integer.class)
-        .setKey(ConnectionSettings.Server.QUEUE_MAX_THREADS)
-        .setDynamic(false)
-        .setDefaultValue(20)
-        .setMinValue(0) // RejectedExecutionHandler is CallerRunsPolicy, meaning that the calling thread would execute the task.
-        .build();
+            .setKey(ConnectionSettings.Server.QUEUE_MAX_THREADS)
+            .setDynamic(false)
+            .setDefaultValue(20)
+            .setMinValue(0) // RejectedExecutionHandler is CallerRunsPolicy, meaning that the calling thread would execute the task.
+            .build();
 
     public static final SystemProperty<Integer> QUEUE_MIN_THREADS = SystemProperty.Builder.ofType(Integer.class)
-        .setKey(ConnectionSettings.Server.QUEUE_MIN_THREADS)
-        .setDynamic(false)
-        .setDefaultValue(0)
-        .setMinValue(0)
-        .build();
+            .setKey(ConnectionSettings.Server.QUEUE_MIN_THREADS)
+            .setDynamic(false)
+            .setDefaultValue(0)
+            .setMinValue(0)
+            .build();
 
     public static final SystemProperty<Integer> QUEUE_SIZE = SystemProperty.Builder.ofType(Integer.class)
-        .setKey(ConnectionSettings.Server.QUEUE_SIZE)
-        .setDynamic(false)
-        .setDefaultValue(2000)
-        .setMinValue(0)
-        .build();
+            .setKey(ConnectionSettings.Server.QUEUE_SIZE)
+            .setDynamic(false)
+            .setDefaultValue(2000)
+            .setMinValue(0)
+            .build();
 
     public static final SystemProperty<Duration> QUEUE_THREAD_TIMEOUT = SystemProperty.Builder.ofType(Duration.class)
-        .setKey("xmpp.server.outgoing.threads-timeout")
-        .setDynamic(false)
-        .setDefaultValue(Duration.ofSeconds(60))
-        .setChronoUnit(ChronoUnit.MILLIS)
-        .setMinValue(Duration.ZERO)
-        .build();
+            .setKey("xmpp.server.outgoing.threads-timeout")
+            .setDynamic(false)
+            .setDefaultValue(Duration.ofSeconds(60))
+            .setChronoUnit(ChronoUnit.MILLIS)
+            .setMinValue(Duration.ZERO)
+            .build();
 
     private static final OutgoingSessionPromise instance = new OutgoingSessionPromise();
 
@@ -129,10 +129,10 @@ public class OutgoingSessionPromise {
 
         // Create a pool of threads that will process queued packets.
         threadPool = new ThreadPoolExecutor(QUEUE_MIN_THREADS.getValue(), QUEUE_MAX_THREADS.getValue(),
-                        QUEUE_THREAD_TIMEOUT.getValue().toMillis(), TimeUnit.MILLISECONDS,
-                        new LinkedBlockingQueue<>(QUEUE_SIZE.getValue()),
-                        new NamedThreadFactory("S2SOutgoingPromise-", Executors.defaultThreadFactory(), false, Thread.NORM_PRIORITY),
-                        new ThreadPoolExecutor.CallerRunsPolicy());
+                QUEUE_THREAD_TIMEOUT.getValue().toMillis(), TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(QUEUE_SIZE.getValue()),
+                new NamedThreadFactory("S2SOutgoingPromise-", Executors.defaultThreadFactory(), false, Thread.NORM_PRIORITY),
+                new ThreadPoolExecutor.CallerRunsPolicy());
     }
 
     public static OutgoingSessionPromise getInstance() {
@@ -346,7 +346,7 @@ public class OutgoingSessionPromise {
                     }
                 }
                 else if (packet instanceof Presence) {
-                    // workaround for OF-23. "undo" the 'setFrom' to a bare JID 
+                    // workaround for OF-23. "undo" the 'setFrom' to a bare JID
                     // by sending the error to all available resources.
                     final List<JID> routes = new ArrayList<>();
                     if (from.getResource() == null || from.getResource().trim().length() == 0) {
@@ -354,7 +354,7 @@ public class OutgoingSessionPromise {
                     } else {
                         routes.add(from);
                     }
-                    
+
                     for (JID route : routes) {
                         Presence reply = new Presence();
                         reply.setID(packet.getID());

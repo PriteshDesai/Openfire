@@ -103,7 +103,7 @@ public class NIOConnection implements Connection {
      * closed.
      */
     private AtomicReference<State> state = new AtomicReference<>(State.OPEN);
-    
+
     /**
      * Lock used to ensure the integrity of the underlying IoSession (refer to
      * https://issues.apache.org/jira/browse/DIRMINA-653 for details)
@@ -315,7 +315,7 @@ public class NIOConnection implements Connection {
             try {
                 buffer.putString(packet.getElement().asXML(), encoder.get());
                 buffer.flip();
-                
+
                 ioSessionLock.lock();
                 try {
                     ioSession.write(buffer);
@@ -477,8 +477,8 @@ public class NIOConnection implements Connection {
         @Override
         protected CharsetEncoder initialValue() {
             return StandardCharsets.UTF_8.newEncoder()
-                .onMalformedInput(CodingErrorAction.REPORT)
-                .onUnmappableCharacter(CodingErrorAction.REPORT);
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT);
         }
     }
 

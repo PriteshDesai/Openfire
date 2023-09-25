@@ -482,13 +482,13 @@ public class SocketConnection implements Connection {
 
     /**
      * Normal connection close will attempt to write the stream end tag. Otherwise this method
-     * forces the connection closed immediately. This method will be called from {@link SocketSendingTracker} 
+     * forces the connection closed immediately. This method will be called from {@link SocketSendingTracker}
      * when sending data over the socket has taken a long time and we need to close the socket, discard
      * the connection and its session.
      */
     private void close(boolean force) {
         if (state.compareAndSet(State.OPEN, State.CLOSED)) {
-            
+
             if (session != null) {
                 session.setStatus(Session.STATUS_CLOSED);
             }
@@ -506,14 +506,14 @@ public class SocketConnection implements Connection {
                 catch (Exception e) {
                     Log.debug("Failed to deliver stream close tag: " + e.getMessage());
                 }
-                
+
                 // Register that we finished sending data on the connection
                 writeFinished();
                 if (allowedToWrite) {
                     releaseWriting();
                 }
             }
-                
+
             closeConnection();
             notifyCloseListeners();
             listeners.clear();
@@ -718,15 +718,14 @@ public class SocketConnection implements Connection {
         this.socketReader = socketReader;
     }
 
-	@Override
-	public void setFlashClient(boolean flashClient) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void setFlashClient(boolean flashClient) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public boolean isFlashClient() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    }
+
+    @Override
+    public boolean isFlashClient() {
+        return false;
+    }
 }

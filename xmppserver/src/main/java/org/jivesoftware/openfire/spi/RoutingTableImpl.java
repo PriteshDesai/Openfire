@@ -36,8 +36,12 @@ import org.jivesoftware.openfire.cluster.ClusteredCacheEntryListener;
 import org.jivesoftware.openfire.cluster.NodeID;
 import org.jivesoftware.openfire.component.ExternalComponentManager;
 import org.jivesoftware.openfire.container.BasicModule;
+import org.jivesoftware.openfire.custom.dto.CustomPollOptionControler;
+import org.jivesoftware.openfire.custom.dto.OpinionPoll;
+import org.jivesoftware.openfire.custom.dto.OpinionPollUpdate;
 import org.jivesoftware.openfire.forward.Forwarded;
 import org.jivesoftware.openfire.handler.PresenceUpdateHandler;
+import org.jivesoftware.openfire.muc.spi.OpinionPollExpireTimerTask;
 import org.jivesoftware.openfire.server.OutgoingSessionPromise;
 import org.jivesoftware.openfire.server.RemoteServerManager;
 import org.jivesoftware.openfire.session.ClientSession;
@@ -62,6 +66,16 @@ import org.xmpp.packet.Message;
 import org.xmpp.packet.Packet;
 import org.xmpp.packet.Presence;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.transform.stream.StreamSource;
+import java.io.StringReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -90,7 +104,8 @@ import java.util.stream.Stream;
 public class RoutingTableImpl extends BasicModule implements RoutingTable, ClusterEventListener {
 
     private static final Logger Log = LoggerFactory.getLogger(RoutingTableImpl.class);
-    
+    public static final SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+
     public static final String C2S_CACHE_NAME = "Routing Users Cache";
     public static final String ANONYMOUS_C2S_CACHE_NAME = "Routing AnonymousUsers Cache";
     public static final String S2S_CACHE_NAME = "Routing Servers Cache";
@@ -333,7 +348,7 @@ public class RoutingTableImpl extends BasicModule implements RoutingTable, Clust
     /*
      * (non-Javadoc)
      * @see org.jivesoftware.openfire.RoutingTable#routePacket(org.xmpp.packet.JID, org.xmpp.packet.Packet, boolean)
-     * 
+     *
      * @param jid the recipient of the packet to route.
      * @param packet the packet to route.
      * @param fromServer true if the packet was created by the server. This packets should
@@ -360,11 +375,11 @@ public class RoutingTableImpl extends BasicModule implements RoutingTable, Clust
         } catch (Exception ex) {
             // Catch here to ensure that all packets get handled, despite various processing
             // exceptions, rather than letting any fall through the cracks. For example,
-            // an IAE could be thrown when running in a cluster if a remote member becomes 
+            // an IAE could be thrown when running in a cluster if a remote member becomes
             // unavailable before the routing caches are updated to remove the defunct node.
-            // We have also occasionally seen various flavors of NPE and other oddities, 
-            // typically due to unexpected environment or logic breakdowns. 
-            Log.error("Primary packet routing failed", ex); 
+            // We have also occasionally seen various flavors of NPE and other oddities,
+            // typically due to unexpected environment or logic breakdowns.
+            Log.error("Primary packet routing failed", ex);
         }
 
         if (!routed) {
@@ -380,12 +395,115 @@ public class RoutingTableImpl extends BasicModule implements RoutingTable, Clust
             else if (packet instanceof Presence) {
                 presenceRouter.routingFailed(jid, packet);
             }
+        } else {
+            if (packet instanceof Message) {
+
+                Message message = (Message) packet;
+
+                if (message.getSubject() != null && message.getType().equals(Message.Type.chat)) {
+
+                    XMLInputFactory xif = XMLInputFactory.newFactory();
+                    xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, false);
+
+                    if (message.getSubject().equals("11")) {
+
+                        Log.info("Inside routetableimpl for create poll ");
+                        try {
+
+                            Element oppinionPoll = message.getChildElement("opinionPoll", "urn:xmpp:createpoll");
+                            XMLStreamReader xsr = xif
+                                    .createXMLStreamReader(new StreamSource(new StringReader(oppinionPoll.asXML())));
+                            JAXBContext jaxbContext = JAXBContext.newInstance(OpinionPoll.class);
+                            Unmarshaller jaxbUnMarshller = jaxbContext.createUnmarshaller();
+                            OpinionPoll oppinionPollObj = (OpinionPoll) jaxbUnMarshller.unmarshal(xsr);
+
+                            if (oppinionPollObj == null)
+                                Log.info("Null Create Poll for one to one Chat");
+                            else
+                                Log.info("Inside Create Poll for one to one Chat");
+
+                            String fromJID = message.getFrom().toBareJID();
+                            String toJID = message.getTo().toBareJID();
+
+                            CustomPollOptionControler custompoll = new CustomPollOptionControler();
+
+                            String roomOriginalName = "";
+
+                            custompoll.addCustomOpinonPoll(oppinionPollObj, 0L, packet.getID(),
+                                    Message.Type.chat.name(), fromJID, toJID);
+
+                            Date expiredAt = new Date(oppinionPollObj.getExpireDate());
+                            Log.info("Date :: " + expiredAt);
+
+                            formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+                            String dateString = formatter.format(expiredAt);
+                            Log.info("Formatted Date String:: " + dateString);
+
+                            String timeZone = oppinionPollObj.getTimeZone();
+                            formatter.setTimeZone(TimeZone.getTimeZone(timeZone));
+                            Log.info("Parsed Date :: " + formatter.parse(dateString));
+
+                            Log.info("Schedule Date :: " + formatter.parse(dateString) + " based on TimeZone :: "
+                                    + timeZone);
+
+                            Timer t = new Timer();
+                            OpinionPollExpireTimerTask timeTask = new OpinionPollExpireTimerTask(
+                                    oppinionPollObj.getPollId(), roomOriginalName);
+                            t.schedule(timeTask, formatter.parse(dateString));
+
+                        } catch (JAXBException e) {
+                            Log.error("Invalid OpinionPoll Create Request");
+                            e.printStackTrace();
+                        } catch (ParseException e) {
+                            Log.error("Parse Exception Subject 11");
+                            e.printStackTrace();
+                        } catch (XMLStreamException e) {
+                            Log.error("Fail to parse message Subject 11" + e.getLocalizedMessage());
+                            e.printStackTrace();
+                        }
+
+                    } else if (message.getSubject().equals("14")) {
+                        Log.info("Inside routetableimpl for update poll");
+                        try {
+                            Element oppinionPollResponse = message.getChildElement("opinionPollUpdate",
+                                    "urn:xmpp:opinionPollUpdate");
+                            XMLStreamReader xsr = xif.createXMLStreamReader(
+                                    new StreamSource(new StringReader(oppinionPollResponse.asXML())));
+                            JAXBContext jaxbContext = JAXBContext.newInstance(OpinionPollUpdate.class);
+                            Unmarshaller jaxbUnMarshller = jaxbContext.createUnmarshaller();
+
+                            OpinionPollUpdate opinionPollUpdate = (OpinionPollUpdate) jaxbUnMarshller.unmarshal(xsr);
+
+                            if (opinionPollUpdate == null)
+                                Log.info("Null Update Poll for one to one Chat");
+                            else
+                                Log.info("Inside Update Poll for one to one Chat");
+
+                            CustomPollOptionControler custompoll = new CustomPollOptionControler();
+
+                            if (opinionPollUpdate.getIsSelect().equals("no")) {
+                                custompoll.deleteOpinionPollResponse(opinionPollUpdate);
+                                Log.info("User Response Deleted from Database.");
+                            } else {
+                                custompoll.updateOpinionPollResponse(opinionPollUpdate);
+                                Log.info("User Response Updated from Database.");
+                            }
+                        } catch (JAXBException e) {
+                            Log.error("Invalid OpinionPoll Response/Update XML");
+                            e.printStackTrace();
+                        } catch (XMLStreamException e) {
+                            Log.error("Fail to parse message Subject 14" + e.getLocalizedMessage());
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
         }
     }
 
     /**
      * Routes packets that are sent to the XMPP domain itself (excluding subdomains).
-     * 
+     *
      * @param jid
      *            the recipient of the packet to route.
      * @param packet
@@ -400,7 +518,7 @@ public class RoutingTableImpl extends BasicModule implements RoutingTable, Clust
      *         {@code false} otherwise.
      */
     private boolean routeToLocalDomain(JID jid, Packet packet,
-            boolean fromServer) {
+                                       boolean fromServer) {
 
 
         boolean routed = false;
@@ -424,7 +542,7 @@ public class RoutingTableImpl extends BasicModule implements RoutingTable, Clust
             ClientRoute clientRoute = getClientRouteForLocalUser(jid);
             if (clientRoute != null) {
                 if (!clientRoute.isAvailable() && routeOnlyAvailable(packet, fromServer) &&
-		                !presenceUpdateHandler.hasDirectPresence(packet.getTo(), packet.getFrom())
+                        !presenceUpdateHandler.hasDirectPresence(packet.getTo(), packet.getFrom())
                         && !PresenceUpdateHandler.isPresenceUpdateReflection( packet )) {
                     Log.debug("Unable to route packet. Packet should only be sent to available sessions and the route is not available. {} ", packet.toXML());
                     routed = false;
@@ -488,8 +606,8 @@ public class RoutingTableImpl extends BasicModule implements RoutingTable, Clust
                                 // The session is not on a local cluster node, so try a remote
                                 final ClientRoute remoteRoute = getClientRouteForLocalUser(ccJid);
                                 if (remotePacketRouter != null // If we're in a cluster
-                                    && remoteRoute != null // and we've found a route to the other node
-                                    && !remoteRoute.getNodeID().equals(XMPPServer.getInstance().getNodeID())) { // and it really is a remote node
+                                        && remoteRoute != null // and we've found a route to the other node
+                                        && !remoteRoute.getNodeID().equals(XMPPServer.getInstance().getNodeID())) { // and it really is a remote node
                                     // Try and route the packet to the remote session
                                     remotePacketRouter.routePacket(remoteRoute.getNodeID().toByteArray(), ccJid, carbon);
                                 } else {
@@ -516,7 +634,7 @@ public class RoutingTableImpl extends BasicModule implements RoutingTable, Clust
     /**
      * Routes packets that are sent to components of the XMPP domain (which are
      * subdomains of the XMPP domain)
-     * 
+     *
      * @param jid
      *            the recipient of the packet to route.
      * @param packet
@@ -528,11 +646,11 @@ public class RoutingTableImpl extends BasicModule implements RoutingTable, Clust
      *         {@code false} otherwise.
      */
     private boolean routeToComponent(JID jid, Packet packet) {
-        if (!hasComponentRoute(jid) 
+        if (!hasComponentRoute(jid)
                 && !ExternalComponentManager.hasConfiguration(jid.getDomain())) {
             return false;
         }
-        
+
         // First check if the component is being hosted in this JVM
         boolean routed = false;
         RoutableChannelHandler route = localRoutingTable.getRoute(new JID(null, jid.getDomain(), null, true));
@@ -581,7 +699,7 @@ public class RoutingTableImpl extends BasicModule implements RoutingTable, Clust
     /**
      * Routes packets that are sent to other XMPP domains than the local XMPP
      * domain.
-     * 
+     *
      * @param jid
      *            the recipient of the packet to route.
      * @param packet
@@ -658,7 +776,7 @@ public class RoutingTableImpl extends BasicModule implements RoutingTable, Clust
             }
         }
     }
-    
+
     /**
      * Returns true if the specified packet must only be route to available client sessions.
      *
@@ -742,11 +860,11 @@ public class RoutingTableImpl extends BasicModule implements RoutingTable, Clust
             if (packet.getType() == Message.Type.headline) {
                 // Headline messages are broadcast.
                 session.process(packet);
-            // Deliver to each session, if is message carbons enabled.
+                // Deliver to each session, if is message carbons enabled.
             } else if (shouldCarbonCopyToResource(session, packet, isPrivate)) {
                 session.process(packet);
-            // Deliver to each session if property route.really-all-resources is true
-            // (in case client does not support carbons)
+                // Deliver to each session if property route.really-all-resources is true
+                // (in case client does not support carbons)
             } else if (JiveGlobals.getBooleanProperty("route.really-all-resources", false)) {
                 session.process(packet);
             }
@@ -1320,7 +1438,7 @@ public class RoutingTableImpl extends BasicModule implements RoutingTable, Clust
         final ClusteredCacheEntryListener<String, ClientRoute> userCacheEntryListener = new ReverseLookupUpdatingCacheEntryListener<>(routeOwnersByClusterNode);
         final ClusteredCacheEntryListener<DomainPair, NodeID> serversCacheEntryListener = new ReverseLookupUpdatingCacheEntryListener<>(s2sDomainPairsByClusterNode);
         final ClusteredCacheEntryListener<String, HashSet<NodeID>> componentsCacheEntryListener = new ReverseLookupComputingCacheEntryListener<>(componentsByClusterNode,
-            nodeIDS -> nodeIDS.stream().filter(n->!n.equals(XMPPServer.getInstance().getNodeID())).collect(Collectors.toSet())
+                nodeIDS -> nodeIDS.stream().filter(n->!n.equals(XMPPServer.getInstance().getNodeID())).collect(Collectors.toSet())
         );
 
         // Note that, when #joinedCluster() fired, the cache will _always_ have been replaced, meaning that it won't
@@ -1337,24 +1455,24 @@ public class RoutingTableImpl extends BasicModule implements RoutingTable, Clust
 
         Log.debug("Simulate 'entryAdded' for all data that already exists elsewhere in the cluster.");
         Stream.concat(usersCache.entrySet().stream(), anonymousUsersCache.entrySet().stream())
-            // this filter isn't needed if we do this before restoreCacheContent.
-            .filter(entry -> !entry.getValue().getNodeID().equals(XMPPServer.getInstance().getNodeID()))
-            .forEach(entry -> userCacheEntryListener.entryAdded(entry.getKey(), entry.getValue(), entry.getValue().getNodeID()));
+                // this filter isn't needed if we do this before restoreCacheContent.
+                .filter(entry -> !entry.getValue().getNodeID().equals(XMPPServer.getInstance().getNodeID()))
+                .forEach(entry -> userCacheEntryListener.entryAdded(entry.getKey(), entry.getValue(), entry.getValue().getNodeID()));
 
         serversCache.entrySet().stream()
-            // this filter isn't needed if we do this before restoreCacheContent.
-            .filter(entry -> !entry.getValue().equals(XMPPServer.getInstance().getNodeID()))
-            .forEach(entry -> serversCacheEntryListener.entryAdded(entry.getKey(), entry.getValue(), entry.getValue()));
+                // this filter isn't needed if we do this before restoreCacheContent.
+                .filter(entry -> !entry.getValue().equals(XMPPServer.getInstance().getNodeID()))
+                .forEach(entry -> serversCacheEntryListener.entryAdded(entry.getKey(), entry.getValue(), entry.getValue()));
 
         componentsCache.entrySet().forEach(entry -> {
             entry.getValue().forEach(nodeIdForComponent -> { // Iterate over all node ids on which the component is known
-                    if (!nodeIdForComponent.equals(XMPPServer.getInstance().getNodeID())) {
-                        // Here we pretend that the component has been added by the node id on which it is reported to
-                        // be available. This might not have been the case, but it is probably accurate. An alternative
-                        // approach is not easily available.
-                        componentsCacheEntryListener.entryAdded(entry.getKey(), entry.getValue(), nodeIdForComponent);
+                        if (!nodeIdForComponent.equals(XMPPServer.getInstance().getNodeID())) {
+                            // Here we pretend that the component has been added by the node id on which it is reported to
+                            // be available. This might not have been the case, but it is probably accurate. An alternative
+                            // approach is not easily available.
+                            componentsCacheEntryListener.entryAdded(entry.getKey(), entry.getValue(), nodeIdForComponent);
+                        }
                     }
-                }
             );
         });
 
@@ -1408,15 +1526,15 @@ public class RoutingTableImpl extends BasicModule implements RoutingTable, Clust
 
         // Remove outgoing server sessions hosted in node that left the cluster
         s2sDomainPairsByClusterNode.values()
-            .stream()
-            .flatMap(Collection::stream)
-            .forEach(domainPair -> {
-                try {
-                    removeServerRoute(domainPair);
-                } catch (Exception e) {
-                    Log.error("We have left the cluster. Federated connections on other nodes are no longer available. To reflect this, we're deleting these routes. While doing this for '{}', this caused an exception to occur.", domainPair, e);
-                }
-            });
+                .stream()
+                .flatMap(Collection::stream)
+                .forEach(domainPair -> {
+                    try {
+                        removeServerRoute(domainPair);
+                    } catch (Exception e) {
+                        Log.error("We have left the cluster. Federated connections on other nodes are no longer available. To reflect this, we're deleting these routes. While doing this for '{}', this caused an exception to occur.", domainPair, e);
+                    }
+                });
         s2sDomainPairsByClusterNode.clear();
 
         // Remove component connections hosted in node that left the cluster
@@ -1624,9 +1742,9 @@ public class RoutingTableImpl extends BasicModule implements RoutingTable, Clust
         final Set<String> existingUserRoutes = routeOwnersByClusterNode.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
         existingUserRoutes.addAll(localRoutingTable.getClientRoutes().stream().map(LocalClientSession::getAddress).map(JID::toFullJID).collect(Collectors.toSet()));
         final Set<String> entriesToRemove = usersSessionsCache.values().stream()
-            .flatMap(Collection::stream)
-            .filter(fullJid -> !existingUserRoutes.contains(fullJid))
-            .collect(Collectors.toSet());
+                .flatMap(Collection::stream)
+                .filter(fullJid -> !existingUserRoutes.contains(fullJid))
+                .collect(Collectors.toSet());
         entriesToRemove.forEach(fullJid -> CacheUtil.removeValueFromMultiValuedCache(usersSessionsCache, new JID(fullJid).toBareJID(), fullJid));
 
         // Add elements from users caches that are not present in users sessions cache
@@ -1654,21 +1772,21 @@ public class RoutingTableImpl extends BasicModule implements RoutingTable, Clust
         // Check if there are local s2s connections that are already in the cache for remote nodes
         Set<DomainPair> localServerRoutesToRemove = new HashSet<>();
         localRoutingTable.getServerRoutes().forEach(
-            route -> route.getOutgoingDomainPairs().forEach(
-                address -> {
-                    final Lock lock = serversCache.getLock(address);
-                    lock.lock();
-                    try {
-                        if (serversCache.containsKey(address)) {
-                            Log.info("We have an s2s connection to {}, but this connection also exists on other nodes. They are not allowed to both exist, so this local s2s connection will be terminated.", address);
-                            localServerRoutesToRemove.add(address);
-                        } else {
-                            serversCache.put(address, server.getNodeID());
-                        }
-                    } finally {
-                        lock.unlock();
-                    }
-                })
+                route -> route.getOutgoingDomainPairs().forEach(
+                        address -> {
+                            final Lock lock = serversCache.getLock(address);
+                            lock.lock();
+                            try {
+                                if (serversCache.containsKey(address)) {
+                                    Log.info("We have an s2s connection to {}, but this connection also exists on other nodes. They are not allowed to both exist, so this local s2s connection will be terminated.", address);
+                                    localServerRoutesToRemove.add(address);
+                                } else {
+                                    serversCache.put(address, server.getNodeID());
+                                }
+                            } finally {
+                                lock.unlock();
+                            }
+                        })
         );
         for (DomainPair localServerRouteToRemove : localServerRoutesToRemove) {
             final RoutableChannelHandler route = localRoutingTable.getRoute(localServerRouteToRemove);

@@ -490,7 +490,7 @@ public class HttpSession extends LocalClientSession {
         // Check if security restraints are observed.
         if (isSecure && !connection.isSecure()) {
             throw new HttpBindException("Session was started from secure connection, all " +
-                "connections on this session must be secured.", BoshBindingError.badRequest);
+                    "connections on this session must be secured.", BoshBindingError.badRequest);
         }
 
         synchronized (connectionQueue)
@@ -1024,7 +1024,7 @@ public class HttpSession extends LocalClientSession {
      * @param async should the invocation block until the data has been delivered?
      */
     private void deliver(@Nonnull final HttpConnection connection, @Nonnull final List<Deliverable> deliverables, final boolean async)
-        throws HttpConnectionClosedException, IOException
+            throws HttpConnectionClosedException, IOException
     {
         Log.trace("Delivering {} deliverables to the client on session {}, using connection with RID {}", deliverables.size(), getStreamID(), connection.getRequestId());
         connection.deliverBody(asBodyText(deliverables), async);
@@ -1129,7 +1129,7 @@ public class HttpSession extends LocalClientSession {
     private String asBodyText(@Nonnull final List<Deliverable> elements) {
         StringBuilder builder = new StringBuilder();
         builder.append("<body xmlns='http://jabber.org/protocol/httpbind' ack='")
-            .append(getLastAcknowledged()).append("'>");
+                .append(getLastAcknowledged()).append("'>");
 
         setLastResponseEmpty(elements.isEmpty());
         for (Deliverable child : elements) {
@@ -1270,43 +1270,43 @@ public class HttpSession extends LocalClientSession {
         public PacketDeliverer getPacketDeliverer() {
             return backupDeliverer;
         }
-        
 
-		@Override
-		public void setFlashClient(boolean flashClient) {
-			// TODO Auto-generated method stub
-			
-		}
 
-		@Override
-		public CompressionPolicy getCompressionPolicy() {
-			// TODO Auto-generated method stub
-			return null;
-		}
+        @Override
+        public void setFlashClient(boolean flashClient) {
+            // TODO Auto-generated method stub
 
-		@Override
-		public void setCompressionPolicy(CompressionPolicy compressionPolicy) {
-			// TODO Auto-generated method stub
-			
-		}
+        }
 
-		@Override
-		public TLSPolicy getTlsPolicy() {
-			// TODO Auto-generated method stub
-			return null;
-		}
+        @Override
+        public CompressionPolicy getCompressionPolicy() {
+            // TODO Auto-generated method stub
+            return null;
+        }
 
-		@Override
-		public void setTlsPolicy(TLSPolicy tlsPolicy) {
-			// TODO Auto-generated method stub
-			
-		}
+        @Override
+        public void setCompressionPolicy(CompressionPolicy compressionPolicy) {
+            // TODO Auto-generated method stub
 
-		@Override
-		public boolean isFlashClient() {
-			// TODO Auto-generated method stub
-			return false;
-		}
+        }
+
+        @Override
+        public TLSPolicy getTlsPolicy() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public void setTlsPolicy(TLSPolicy tlsPolicy) {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public boolean isFlashClient() {
+            // TODO Auto-generated method stub
+            return false;
+        }
     }
 
     /**
@@ -1451,26 +1451,26 @@ public class HttpSession extends LocalClientSession {
             }
         }
         return this.getClass().getSimpleName() +"{" +
-            "address=" + getAddress() +
-            ", streamID=" + getStreamID() +
-            ", status=" + getStatus() +
-            (getStatus() == STATUS_AUTHENTICATED ? " (authenticated)" : "" ) +
-            (getStatus() == STATUS_CONNECTED ? " (connected)" : "" ) +
-            (getStatus() == STATUS_CLOSED ? " (closed)" : "" ) +
-            ", isSecure=" + isSecure() +
-            ", isDetached=" + isDetached() +
-            ", serverName='" + getServerName() + '\'' +
-            ", isInitialized=" + isInitialized() +
-            ", hasAuthToken=" + (getAuthToken() != null) +
-            ", peer address='" + peerAddress +'\'' +
-            ", presence='" + getPresence().toString() + '\'' +
-            ", hold='" + getHold() + '\'' +
-            ", wait='" + getWait() + '\'' +
-            ", maxRequests='" + getMaxRequests() + '\'' +
-            ", maxPause='" + getMaxPause() + '\'' +
-            ", lastActivity='" + getLastActivity() + '\'' +
-            ", lastAcknowledged='" + getLastAcknowledged() + '\'' +
-            ", inactivityTimeout='" + getInactivityTimeout() + '\'' +
-            '}';
+                "address=" + getAddress() +
+                ", streamID=" + getStreamID() +
+                ", status=" + getStatus() +
+                (getStatus() == STATUS_AUTHENTICATED ? " (authenticated)" : "" ) +
+                (getStatus() == STATUS_CONNECTED ? " (connected)" : "" ) +
+                (getStatus() == STATUS_CLOSED ? " (closed)" : "" ) +
+                ", isSecure=" + isSecure() +
+                ", isDetached=" + isDetached() +
+                ", serverName='" + getServerName() + '\'' +
+                ", isInitialized=" + isInitialized() +
+                ", hasAuthToken=" + (getAuthToken() != null) +
+                ", peer address='" + peerAddress +'\'' +
+                ", presence='" + getPresence().toString() + '\'' +
+                ", hold='" + getHold() + '\'' +
+                ", wait='" + getWait() + '\'' +
+                ", maxRequests='" + getMaxRequests() + '\'' +
+                ", maxPause='" + getMaxPause() + '\'' +
+                ", lastActivity='" + getLastActivity() + '\'' +
+                ", lastAcknowledged='" + getLastAcknowledged() + '\'' +
+                ", inactivityTimeout='" + getInactivityTimeout() + '\'' +
+                '}';
     }
 }

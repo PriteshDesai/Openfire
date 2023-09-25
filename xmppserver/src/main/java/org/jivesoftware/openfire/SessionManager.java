@@ -69,11 +69,11 @@ public class SessionManager extends BasicModule implements ClusterEventListener
 {
     private static final Logger Log = LoggerFactory.getLogger(SessionManager.class);
     private static final SystemProperty<Integer> CONFLICT_LIMIT = SystemProperty.Builder.ofType(Integer.class)
-        .setKey("xmpp.session.conflict-limit")
-        .setDynamic(true)
-        .setDefaultValue(0)
-        .setMinValue(-1)
-        .build();
+            .setKey("xmpp.session.conflict-limit")
+            .setDynamic(true)
+            .setDefaultValue(0)
+            .setMinValue(-1)
+            .build();
 
     public static final String COMPONENT_SESSION_CACHE_NAME = "Components Sessions";
     public static final String CM_CACHE_NAME = "Connection Managers Sessions";
@@ -462,7 +462,7 @@ public class SessionManager extends BasicModule implements ClusterEventListener
                                                int hold, boolean isSecure, Duration maxPollingInterval,
                                                int maxRequests, Duration maxPause, Duration defaultInactivityTimeout,
                                                int majorVersion, int minorVersion)
-        throws UnauthorizedException, UnknownHostException
+            throws UnauthorizedException, UnknownHostException
     {
         if (serverName == null) {
             throw new UnauthorizedException("Server not initialized");
@@ -471,7 +471,7 @@ public class SessionManager extends BasicModule implements ClusterEventListener
         final PacketDeliverer backupDeliverer = ClientConnectionHandler.BACKUP_PACKET_DELIVERY_ENABLED.getValue() ? new OfflinePacketDeliverer() : null;
         final HttpSession.HttpVirtualConnection vConnection = new HttpSession.HttpVirtualConnection(connection.getRemoteAddr(), backupDeliverer, ConnectionType.SOCKET_C2S);
         final HttpSession session = new HttpSession(vConnection, serverName, id, connection.getRequestId(), connection.getPeerCertificates(), language, wait, hold, isSecure,
-                                              maxPollingInterval, maxRequests, maxPause, defaultInactivityTimeout, majorVersion, minorVersion);
+                maxPollingInterval, maxRequests, maxPause, defaultInactivityTimeout, majorVersion, minorVersion);
         vConnection.init(session);
         vConnection.registerCloseListener(clientSessionListener, session);
         localSessionManager.getPreAuthenticatedSessions().put(session.getAddress().getResource(), session);
@@ -1456,12 +1456,12 @@ public class SessionManager extends BasicModule implements ClusterEventListener
             }
         }
     }
-    
+
     public void sendClientMessage(JID fromJID, JID toJID, String subject, String body) {
-		Message packet = createClientMessage(subject, body, fromJID, toJID);
-		routingTable.routePacket(toJID, packet, true);
-		routingTable.routePacket(fromJID, packet, true);
-	}
+        Message packet = createClientMessage(subject, body, fromJID, toJID);
+        routingTable.routePacket(toJID, packet, true);
+        routingTable.routePacket(fromJID, packet, true);
+    }
 
     private Message createServerMessage(String subject, String body) {
         Message message = new Message();
@@ -1473,19 +1473,19 @@ public class SessionManager extends BasicModule implements ClusterEventListener
         message.setBody(body);
         return message;
     }
-    
+
     private Message createClientMessage(String subject, String body, JID fromJID, JID toJID) {
-		Message message = new Message();
-		message.setFrom(fromJID);
-		message.setTo(toJID);
-		message.setType(Message.Type.chat);
-		Log.info("Dhaval Session Manager 1500");
-		if (subject != null) {
-			message.setSubject(subject);
-		}
-		message.setBody(body);
-		return message;
-	}
+        Message message = new Message();
+        message.setFrom(fromJID);
+        message.setTo(toJID);
+        message.setType(Message.Type.chat);
+        Log.info("Dhaval Session Manager 1500");
+        if (subject != null) {
+            message.setSubject(subject);
+        }
+        message.setBody(body);
+        return message;
+    }
 
     @Override
     public void start() throws IllegalStateException {
@@ -1599,9 +1599,9 @@ public class SessionManager extends BasicModule implements ClusterEventListener
         if (idleTime <= 0 && isMultipleServerConnectionsAllowed() )
         {
             Log.warn("Allowing multiple S2S connections for each domain, without setting a " +
-                "maximum idle timeout for these connections, is unrecommended! Either " +
-                "set xmpp.server.session.allowmultiple to 'false' or change " +
-                "xmpp.server.session.idle to a (large) positive value.");
+                    "maximum idle timeout for these connections, is unrecommended! Either " +
+                    "set xmpp.server.session.allowmultiple to 'false' or change " +
+                    "xmpp.server.session.idle to a (large) positive value.");
         }
     }
 
@@ -1643,9 +1643,9 @@ public class SessionManager extends BasicModule implements ClusterEventListener
 
         // Simulate 'entryAdded' for all data that already exists elsewhere in the cluster.
         incomingServerSessionInfoCache.entrySet().stream()
-            // this filter isn't needed if we do this before restoreCacheContent.
-            .filter(entry -> !entry.getValue().getNodeID().equals(XMPPServer.getInstance().getNodeID()))
-            .forEach(entry -> incomingServerSessionsCacheEntryListener.entryAdded(entry.getKey(), entry.getValue(), entry.getValue().getNodeID()));
+                // this filter isn't needed if we do this before restoreCacheContent.
+                .filter(entry -> !entry.getValue().getNodeID().equals(XMPPServer.getInstance().getNodeID()))
+                .forEach(entry -> incomingServerSessionsCacheEntryListener.entryAdded(entry.getKey(), entry.getValue(), entry.getValue().getNodeID()));
 
         // Register a cache entry event listener that will collect data for entries added by all other cluster nodes,
         // which is intended to be used (only) in the event of a cluster split.
@@ -1653,9 +1653,9 @@ public class SessionManager extends BasicModule implements ClusterEventListener
 
         // Simulate 'entryAdded' for all data that already exists elsewhere in the cluster.
         sessionInfoCache.entrySet().stream()
-            // this filter isn't needed if we do this before restoreCacheContent.
-            .filter(entry -> !entry.getValue().getNodeID().equals(XMPPServer.getInstance().getNodeID()))
-            .forEach(entry -> sessionInfoKeysClusterNodeCacheEntryListener.entryAdded(entry.getKey(), entry.getValue(), entry.getValue().getNodeID()));
+                // this filter isn't needed if we do this before restoreCacheContent.
+                .filter(entry -> !entry.getValue().getNodeID().equals(XMPPServer.getInstance().getNodeID()))
+                .forEach(entry -> sessionInfoKeysClusterNodeCacheEntryListener.entryAdded(entry.getKey(), entry.getValue(), entry.getValue().getNodeID()));
 
         // Add the entry listeners to the corresponding caches. Note that, when #joinedCluster() fired, the cache will
         // _always_ have been replaced, meaning that it won't have old event listeners. When #leaveCluster() fires, the
@@ -1722,14 +1722,14 @@ public class SessionManager extends BasicModule implements ClusterEventListener
         final Set<StreamID> removedServerSessions = incomingServerSessionInfoByClusterNode.remove(nodeIDOfLostNode);
         if (removedServerSessions != null) {
             removedServerSessions
-                .forEach(streamID -> {
-                    try {
-                        // Remove all the domains that were registered for this server session.
-                        unregisterIncomingServerSession(streamID);
-                    } catch (Exception e) {
-                        Log.error("Node {} left the cluster. Incoming server sessions on that node are no longer available. To reflect this, we're deleting these sessions. While doing this for '{}', this caused an exception to occur.", nodeIDOfLostNode, streamID, e);
-                    }
-                });
+                    .forEach(streamID -> {
+                        try {
+                            // Remove all the domains that were registered for this server session.
+                            unregisterIncomingServerSession(streamID);
+                        } catch (Exception e) {
+                            Log.error("Node {} left the cluster. Incoming server sessions on that node are no longer available. To reflect this, we're deleting these sessions. While doing this for '{}', this caused an exception to occur.", nodeIDOfLostNode, streamID, e);
+                        }
+                    });
         }
 
         // For componentSessionsCache and multiplexerSessionsCache there is no clean up to be done, except for removing
@@ -1919,7 +1919,7 @@ public class SessionManager extends BasicModule implements ClusterEventListener
                         if (session == routingTable.getClientRoute(session.getAddress())) {
                             try {
                                 if ((clientSession.getPresence().isAvailable() || !clientSession.wasAvailable()) &&
-                                    routingTable.hasClientRoute(session.getAddress())) {
+                                        routingTable.hasClientRoute(session.getAddress())) {
                                     // Send an unavailable presence to the user's subscribers
                                     // Note: This gives us a chance to send an unavailable presence to the
                                     // entities that the user sent directed presences

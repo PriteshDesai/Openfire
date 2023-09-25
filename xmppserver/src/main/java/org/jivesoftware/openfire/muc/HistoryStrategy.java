@@ -42,8 +42,8 @@ import java.util.stream.Collectors;
 /**
  * <p>Multi-User Chat rooms may cache history of the conversations in the room in order to
  * play them back to newly arriving members.</p>
- * 
- * <p>This class is an internal component of MUCRoomHistory that describes the strategy that can 
+ *
+ * <p>This class is an internal component of MUCRoomHistory that describes the strategy that can
  * be used, and provides a method of administering the history behavior.</p>
  *
  * @author Gaston Dombiak
@@ -109,7 +109,7 @@ public class HistoryStrategy implements Externalizable {
     {}
 
     /**
-     * Create a history strategy with the given parent strategy (for defaults) or null if no 
+     * Create a history strategy with the given parent strategy (for defaults) or null if no
      * parent exists.
      *
      * @param roomJID the unique identifier of the room for which this strategy will store messages.
@@ -281,7 +281,7 @@ public class HistoryStrategy implements Externalizable {
 
     /**
      * Obtain the current history as an iterator of messages to play back to a new room member.
-     * 
+     *
      * @return An iterator of Message objects to be sent to the new room member.
      */
     public Iterator<Message> getMessageHistory(){
@@ -292,10 +292,10 @@ public class HistoryStrategy implements Externalizable {
     }
 
     /**
-     * Obtain the current history to be iterated in reverse mode. This means that the returned list 
-     * iterator will be positioned at the end of the history so senders of this message must 
+     * Obtain the current history to be iterated in reverse mode. This means that the returned list
+     * iterator will be positioned at the end of the history so senders of this message must
      * traverse the list in reverse mode.
-     * 
+     *
      * @return A list iterator of Message objects positioned at the end of the list.
      */
     public ListIterator<Message> getReverseMessageHistory(){
@@ -442,7 +442,7 @@ public class HistoryStrategy implements Externalizable {
     /**
      * Returns the message within the history of the room that has changed the
      * room's subject.
-     * 
+     *
      * @return the latest room subject change or null if none exists yet.
      */
     @Nullable
@@ -452,30 +452,30 @@ public class HistoryStrategy implements Externalizable {
 
     /**
      * Returns true if the given message qualifies as a subject change request for
-     * the target MUC room, per XEP-0045. Note that this does not validate whether 
+     * the target MUC room, per XEP-0045. Note that this does not validate whether
      * the sender has permission to make the change, because subject change requests
      * may be loaded from history or processed "live" during a user's session.
-     * 
+     *
      * Refer to http://xmpp.org/extensions/xep-0045.html#subject-mod for details.
      *
      * @param message the message to check
      * @return true if the given packet is a subject change request
      */
     public boolean isSubjectChangeRequest(Message message) {
-        
-        // The subject is changed by sending a message of type "groupchat" to the <room@service>, 
-        // where the <message/> MUST contain a <subject/> element that specifies the new subject 
+
+        // The subject is changed by sending a message of type "groupchat" to the <room@service>,
+        // where the <message/> MUST contain a <subject/> element that specifies the new subject
         // but MUST NOT contain a <body/> element (or a <thread/> element).
         // Unfortunately, many clients do not follow these strict guidelines from the specs, so we
         // allow a lenient policy for detecting non-conforming subject change requests. This can be
         // configured by setting the "xmpp.muc.subject.change.strict" property to false (true by default).
         // An empty <subject/> value means that the room subject should be removed.
 
-        return Message.Type.groupchat == message.getType() && 
-                message.getSubject() != null && 
-                (!isSubjectChangeStrict() || 
-                    (message.getBody() == null && 
-                     message.getThread() == null));
+        return Message.Type.groupchat == message.getType() &&
+                message.getSubject() != null &&
+                (!isSubjectChangeStrict() ||
+                        (message.getBody() == null &&
+                                message.getThread() == null));
     }
 
     private boolean isSubjectChangeStrict() {
@@ -584,9 +584,9 @@ public class HistoryStrategy implements Externalizable {
         if (o == null || getClass() != o.getClass()) return false;
         HistoryStrategy that = (HistoryStrategy) o;
         return maxNumber == that.maxNumber && type == that.type
-            && Objects.equals(contextPrefix, that.contextPrefix) && Objects.equals(contextSubdomain, that.contextSubdomain)
-            && (roomSubject == that.roomSubject || (roomSubject != null && that.roomSubject != null && Objects.equals(roomSubject.toXML(), that.roomSubject.toXML())) )
-            && Objects.equals(roomJID, that.roomJID) && Objects.equals(parent, that.parent);
+                && Objects.equals(contextPrefix, that.contextPrefix) && Objects.equals(contextSubdomain, that.contextSubdomain)
+                && (roomSubject == that.roomSubject || (roomSubject != null && that.roomSubject != null && Objects.equals(roomSubject.toXML(), that.roomSubject.toXML())) )
+                && Objects.equals(roomJID, that.roomJID) && Objects.equals(parent, that.parent);
     }
 
     @Override

@@ -203,7 +203,12 @@ public class ClientSessionConnection extends VirtualConnection {
 		
 	}
 
-	@Override
+    @Override
+    public boolean isFlashClient() {
+        return false;
+    }
+
+    @Override
 	public CompressionPolicy getCompressionPolicy() {
 		// TODO Auto-generated method stub
 		return null;
@@ -225,11 +230,5 @@ public class ClientSessionConnection extends VirtualConnection {
 	public void setTlsPolicy(TLSPolicy tlsPolicy) {
 		// TODO Auto-generated method stub
 		
-	}
-
-	@Override
-	public boolean isFlashClient() {
-		// TODO Auto-generated method stub
-		return false;
 	}
 }

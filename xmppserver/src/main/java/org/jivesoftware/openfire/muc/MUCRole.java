@@ -141,7 +141,7 @@ public class MUCRole implements Cacheable, Externalizable {
 	 * @param presence    the presence sent by the user to join the room.
 	 */
 	public MUCRole(MUCRoom chatroom, String nickname, MUCRole.Role role, MUCRole.Affiliation affiliation, JID userJid,
-			Presence presence) {
+				   Presence presence) {
 		this.roomJid = chatroom.getJID();
 		this.nick = nickname;
 		this.userJid = userJid;
@@ -371,7 +371,7 @@ public class MUCRole implements Cacheable, Externalizable {
 
 	/**
 	 * Get the NodeId of the Entity
-	 * 
+	 *
 	 * @return
 	 */
 	public NodeID getNodeID() {
@@ -448,7 +448,7 @@ public class MUCRole implements Cacheable, Externalizable {
 	 *
 	 * To be a deaf occupant the initial presence sent to the room while joining the
 	 * room has to include the following child element:
-	 * 
+	 *
 	 * <pre>
 	 * &lt;x xmlns='http://jivesoftware.org/protocol/muc'&gt;
 	 *     &lt;deaf-occupant/&gt;
@@ -567,47 +567,47 @@ public class MUCRole implements Cacheable, Externalizable {
 			// If this user is joined through FMUC, use the FMUC-reported address,
 			// otherwise, use the local address.
 			switch (sender.size()) {
-			case 0:
-				Log.warn(
-						"Cannot add required FMUC data to outbound stanza. Unable to determine the role of the sender of stanza sent over FMUC: {}",
-						packet);
-				return;
-
-			case 1:
-				final MUCRole role = sender.iterator().next();
-				if (role.isRemoteFmuc()) {
-					reportingFmucAddress = role.getReportedFmucAddress();
-				} else {
-					reportingFmucAddress = role.getUserAddress();
-				}
-				break;
-
-			default:
-				// The user has more than one role, which probably means it joined the room from
-				// more than one device.
-				// At this point in the code flow, we can't determine anymore which full JID
-				// caused the stanza to be sent.
-				// As a fallback, send the _bare_ JID of the user (which should be equal for all
-				// its resources).
-				// TODO verify if the compromise is acceptable in the XEP.
-				final Set<JID> bareJids = sender.stream().map(r -> {
-					if (r.isRemoteFmuc()) {
-						return r.getReportedFmucAddress().asBareJID();
-					} else {
-						return r.getUserAddress().asBareJID();
-					}
-				}).collect(Collectors.toSet());
-
-				if (bareJids.size() == 1) {
+				case 0:
 					Log.warn(
-							"Sender '{}' has more than one role in room '{}', indicating that the user joined the room from more than one device. Using its bare instead of full JID for FMUC reporting.",
-							packet.getFrom(), this.getChatRoom().getJID());
-					reportingFmucAddress = bareJids.iterator().next().asBareJID();
-				} else {
-					throw new IllegalStateException(
-							"Unable to deduce one FMUC address for occupant address '" + packet.getFrom() + "'.");
-				}
-				break;
+							"Cannot add required FMUC data to outbound stanza. Unable to determine the role of the sender of stanza sent over FMUC: {}",
+							packet);
+					return;
+
+				case 1:
+					final MUCRole role = sender.iterator().next();
+					if (role.isRemoteFmuc()) {
+						reportingFmucAddress = role.getReportedFmucAddress();
+					} else {
+						reportingFmucAddress = role.getUserAddress();
+					}
+					break;
+
+				default:
+					// The user has more than one role, which probably means it joined the room from
+					// more than one device.
+					// At this point in the code flow, we can't determine anymore which full JID
+					// caused the stanza to be sent.
+					// As a fallback, send the _bare_ JID of the user (which should be equal for all
+					// its resources).
+					// TODO verify if the compromise is acceptable in the XEP.
+					final Set<JID> bareJids = sender.stream().map(r -> {
+						if (r.isRemoteFmuc()) {
+							return r.getReportedFmucAddress().asBareJID();
+						} else {
+							return r.getUserAddress().asBareJID();
+						}
+					}).collect(Collectors.toSet());
+
+					if (bareJids.size() == 1) {
+						Log.warn(
+								"Sender '{}' has more than one role in room '{}', indicating that the user joined the room from more than one device. Using its bare instead of full JID for FMUC reporting.",
+								packet.getFrom(), this.getChatRoom().getJID());
+						reportingFmucAddress = bareJids.iterator().next().asBareJID();
+					} else {
+						throw new IllegalStateException(
+								"Unable to deduce one FMUC address for occupant address '" + packet.getFrom() + "'.");
+					}
+					break;
 			}
 		}
 
@@ -697,14 +697,14 @@ public class MUCRole implements Cacheable, Externalizable {
 		 */
 		public static MUCRole.Role valueOf(int value) {
 			switch (value) {
-			case 0:
-				return moderator;
-			case 1:
-				return participant;
-			case 2:
-				return visitor;
-			default:
-				return none;
+				case 0:
+					return moderator;
+				case 1:
+					return participant;
+				case 2:
+					return visitor;
+				default:
+					return none;
 			}
 		}
 	}
@@ -765,16 +765,16 @@ public class MUCRole implements Cacheable, Externalizable {
 		 */
 		public static MUCRole.Affiliation valueOf(int value) {
 			switch (value) {
-			case 10:
-				return owner;
-			case 20:
-				return admin;
-			case 30:
-				return member;
-			case 40:
-				return outcast;
-			default:
-				return none;
+				case 10:
+					return owner;
+				case 20:
+					return admin;
+				case 30:
+					return member;
+				case 40:
+					return outcast;
+				default:
+					return none;
 			}
 		}
 	}
@@ -894,7 +894,7 @@ public class MUCRole implements Cacheable, Externalizable {
 			}
 			nick = ExternalizableUtil.getInstance().readSafeUTF(in);
 			synchronized (this) { // Unlikely to be needed, as this should operate on a new instance. Will prevent
-									// static analyzers from complaining at negligible cost.
+				// static analyzers from complaining at negligible cost.
 				if (ExternalizableUtil.getInstance().readBoolean(in)) {
 					presence = new Presence((Element) ExternalizableUtil.getInstance().readSerializable(in));
 				} else {
@@ -906,7 +906,7 @@ public class MUCRole implements Cacheable, Externalizable {
 			voiceOnly = ExternalizableUtil.getInstance().readBoolean(in);
 			rJID = new JID(ExternalizableUtil.getInstance().readSafeUTF(in), false);
 			synchronized (this) { // Unlikely to be needed, as this should operate on a new instance. Will prevent
-									// static analyzers from complaining at negligible cost.
+				// static analyzers from complaining at negligible cost.
 				extendedInformation = (Element) ExternalizableUtil.getInstance().readSerializable(in);
 			}
 			if (ExternalizableUtil.getInstance().readBoolean(in)) {
