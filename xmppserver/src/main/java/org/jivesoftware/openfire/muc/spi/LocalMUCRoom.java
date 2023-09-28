@@ -126,13 +126,18 @@ import org.xmpp.packet.Presence;
 public class LocalMUCRoom extends MUCRoom implements GroupEventListener {
 
 	private static final Logger Log = LoggerFactory.getLogger(LocalMUCRoom.class);
+	
+	
+	
+//	private static final SystemProperty<Boolean> JOIN_PRESENCE_ENABLE = SystemProperty.Builder.ofType(Boolean.class)
+//			.setKey("xmpp.muc.join.presence").setDynamic(true).setDefaultValue(true).build();
 
-	private static final SystemProperty<Boolean> JOIN_PRESENCE_ENABLE = SystemProperty.Builder.ofType(Boolean.class)
-			.setKey("xmpp.muc.join.presence").setDynamic(true).setDefaultValue(true).build();
+//	private static final SystemProperty<Duration> SELF_PRESENCE_TIMEOUT = SystemProperty.Builder.ofType(Duration.class)
+//			.setKey("xmpp.muc.join.self-presence-timeout").setDynamic(true).setDefaultValue(Duration.ofSeconds(2))
+//			.setChronoUnit(ChronoUnit.MILLIS).build();
+	private static final SystemProperty<Boolean> JOIN_PRESENCE_ENABLE = MUCRoom.JOIN_PRESENCE_ENABLE;
 
-	private static final SystemProperty<Duration> SELF_PRESENCE_TIMEOUT = SystemProperty.Builder.ofType(Duration.class)
-			.setKey("xmpp.muc.join.self-presence-timeout").setDynamic(true).setDefaultValue(Duration.ofSeconds(2))
-			.setChronoUnit(ChronoUnit.MILLIS).build();
+	private static final SystemProperty<Duration> SELF_PRESENCE_TIMEOUT = MUCRoom.SELF_PRESENCE_TIMEOUT;
 
 	/**
 	 * The service hosting the room.

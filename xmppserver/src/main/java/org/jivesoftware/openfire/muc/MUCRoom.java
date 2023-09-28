@@ -71,7 +71,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
             .setDefaultValue(true)
             .build();
 
-    private static final SystemProperty<Duration> SELF_PRESENCE_TIMEOUT = SystemProperty.Builder.ofType(Duration.class)
+    public static final SystemProperty<Duration> SELF_PRESENCE_TIMEOUT = SystemProperty.Builder.ofType(Duration.class)
             .setKey("xmpp.muc.join.self-presence-timeout")
             .setDynamic(true)
             .setDefaultValue(Duration.ofSeconds( 2 ))
