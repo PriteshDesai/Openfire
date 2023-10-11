@@ -130,6 +130,7 @@ import com.google.common.reflect.ClassPath;
 import java.util.Timer;
 import org.jivesoftware.openfire.muc.spi.OpinionPollExpireTimerTask;
 
+
 /**
  * The main XMPP server that will load, initialize and start all the server's
  * modules. The server is unique in the JVM and could be obtained by using the
@@ -698,6 +699,9 @@ public class XMPPServer {
     }
 
     public void start() {
+    	 Connection conn = null;
+         PreparedStatement pstmt = null;
+         
         try {
             initialize();
 
@@ -744,8 +748,7 @@ public class XMPPServer {
             }
             Date today = new Date();
             Date yesterday = new Date(today.getTime() - (1000 * 60 * 60 * 24));
-            Connection conn = null;
-            PreparedStatement pstmt = null;
+           
             // UnProcessed scheduler handler.
             conn = DbConnectionManager.getConnection();
             pstmt = conn.prepareStatement("select o.pollid, o.expiredat, o.timezone, omr.name from ofpollmaster o "
@@ -775,16 +778,15 @@ public class XMPPServer {
 //						+ formatter.parse(dateString));
                 t.schedule(timeTask, formatter.parse(dateString));
             }
-            pstmt.close();
-            conn.close();
-
         }
         catch (Exception e) {
             e.printStackTrace();
             logger.error(e.getMessage(), e);
             System.out.println(LocaleUtils.getLocalizedString("startup.error"));
             shutdownServer();
-        }
+        } finally {
+			DbConnectionManager.closeConnection(pstmt, conn);
+		}
     }
 
     // A SystemProperty class will not appear in the System Properties screen until it is referenced. This method

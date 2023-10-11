@@ -16,6 +16,12 @@
 
 package org.jivesoftware.openfire.muc.cluster;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+
+import javax.annotation.Nonnull;
+
 import org.dom4j.Element;
 import org.dom4j.tree.DefaultElement;
 import org.jivesoftware.openfire.muc.spi.LocalMUCRoom;
@@ -24,81 +30,80 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xmpp.packet.Message;
 
-import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-
 /**
- * Task that broadcasts a message to local room occupants. When a room occupant sends a
- * message to the room each cluster node will execute this task and broadcast the message
- * to its local room occupants.
+ * Task that broadcasts a message to local room occupants. When a room occupant
+ * sends a message to the room each cluster node will execute this task and
+ * broadcast the message to its local room occupants.
  *
  * @author Gaston Dombiak
  */
 public class BroadcastMessageRequest extends MUCRoomTask<Void> {
-    private static final Logger Log = LoggerFactory.getLogger( BroadcastMessageRequest.class );
-    private int occupants;
-    private Message message;
+	private static final Logger Log = LoggerFactory.getLogger(BroadcastMessageRequest.class);
+	private int occupants;
+	private Message message;
 
-    public BroadcastMessageRequest() {
-    }
+	public BroadcastMessageRequest() {
+	}
 
-    public BroadcastMessageRequest(@Nonnull final LocalMUCRoom room, @Nonnull final Message message, @Nonnull final int occupants) {
-        super(room);
-        this.message = message;
-        this.occupants = occupants;
+	public BroadcastMessageRequest(@Nonnull final LocalMUCRoom room, @Nonnull final Message message,
+			final int occupants) {
+		super(room);	
+		this.message = message;
+		this.occupants = occupants;
 
-        if (!message.getFrom().asBareJID().equals(room.getJID())) {
-            // At this point, the 'from' address of the to-be broadcasted stanza can be expected to be the role-address
-            // of the subject, or more broadly: it's bare JID representation should match that of the room. If that's not
-            // the case then there's a bug in Openfire. Catch this here, as otherwise, privacy-sensitive data is leaked.
-            // See: OF-2152
-            throw new IllegalArgumentException("Broadcasted presence stanza's 'from' JID " + message.getFrom() + " does not match room JID: " + room.getJID());
-        }
-    }
+		if (!message.getFrom().asBareJID().equals(room.getJID())) {
+			// At this point, the 'from' address of the to-be broadcasted stanza can be
+			// expected to be the role-address
+			// of the subject, or more broadly: it's bare JID representation should match
+			// that of the room. If that's not
+			// the case then there's a bug in Openfire. Catch this here, as otherwise,
+			// privacy-sensitive data is leaked.
+			// See: OF-2152
+			throw new IllegalArgumentException("Broadcasted presence stanza's 'from' JID " + message.getFrom()
+					+ " does not match room JID: " + room.getJID());
+		}
+	}
 
-    public Message getMessage() {
-        return message;
-    }
+	public Message getMessage() {
+		return message;
+	}
 
-    public int getOccupants() {
-        return occupants;
-    }
+	public int getOccupants() {
+		return occupants;
+	}
 
-    @Override
-    public Void getResult() {
-        return null;
-    }
+	@Override
+	public Void getResult() {
+		return null;
+	}
 
-    @Override
-    public void run() {
-        // Execute the operation considering that we may still be joining the cluster
-        execute(new Runnable() {
-            @Override
-            public void run() {
-                try
-                {
-                    getRoom().broadcast( BroadcastMessageRequest.this );
-                }
-                catch ( Exception e )
-                {
-                    Log.warn( "An unexpected exception occurred while trying to broadcast a message from {} in the room {}", message.getFrom(), getRoom().getJID() );
-                }
-            }
-        });
-    }
+	@Override
+	public void run() {
+		// Execute the operation considering that we may still be joining the cluster
+		execute(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					getRoom().broadcast(BroadcastMessageRequest.this);
+				} catch (Exception e) {
+					Log.warn(
+							"An unexpected exception occurred while trying to broadcast a message from {} in the room {}",
+							message.getFrom(), getRoom().getJID());
+				}
+			}
+		});
+	}
 
-    @Override
-    public void writeExternal(ObjectOutput out) throws IOException {
-        super.writeExternal(out);
-        ExternalizableUtil.getInstance().writeSerializable(out, (DefaultElement) message.getElement());
-    }
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		super.writeExternal(out);
+		ExternalizableUtil.getInstance().writeSerializable(out, (DefaultElement) message.getElement());
+	}
 
-    @Override
-    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        super.readExternal(in);
-        Element packetElement = (Element) ExternalizableUtil.getInstance().readSerializable(in);
-        message = new Message(packetElement, true);
-    }
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		super.readExternal(in);
+		Element packetElement = (Element) ExternalizableUtil.getInstance().readSerializable(in);
+		message = new Message(packetElement, true);
+	}
 }

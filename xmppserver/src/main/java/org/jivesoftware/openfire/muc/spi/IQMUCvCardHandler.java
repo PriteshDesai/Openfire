@@ -258,6 +258,7 @@ public class IQMUCvCardHandler extends IQHandler
         Log.debug("Sending configuration change notification to all occupants of room {}", room.getName());
         final Message notification = new Message();
         notification.setType(Message.Type.groupchat);
+        Log.info("Dhaval IQMUCvCardHandler 242");
         notification.setFrom(room.getJID());
         final Element x = notification.addChildElement("x", "http://jabber.org/protocol/muc#user");
         final Element status = x.addElement("status");

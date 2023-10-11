@@ -242,7 +242,7 @@ public class PushNotificationController {
 			PushNotificationPayloadDto notiDto) {
 
 		for (UserDeviceRosterDetails dto : userDeviceRoasterDetails) {
-			Log.info("Group Notification for : " + notiDto.getGroupName());
+			Log.debug("Group Notification for : " + notiDto.getGroupName());
 			publishNotification(new UserDeviceEntity(dto.getUserName(), dto.getJid(), dto.getDeviceType(),
 					dto.getDeviceToken(), dto.isHuaweiPush(), dto.getVoipToken(), dto.isActive(), dto.getChannelName()),
 					notiDto);
@@ -268,7 +268,7 @@ public class PushNotificationController {
 		case ANDROID:
 
 			if (!userDeviceEntity.isHuaweiPush()) {
-				Log.info("FCM Data Payload : " + data);
+				Log.debug("FCM Data Payload : " + data);
 				SendFCMNotification(userDeviceEntity.getDeviceToken(), body, title, data, true);
 			} else {
 //				sendJPUSHNotification(userDeviceEntity.getDeviceToken(), title, data, body);
@@ -327,7 +327,7 @@ public class PushNotificationController {
 				data = gson.toJson(sub1Dto);
 
 				if (!userDeviceEntity.isHuaweiPush()) {
-					Log.info("FCM Data Payload : " + data);
+					Log.debug("FCM Data Payload : " + data);
 					SendFCMNotification(userDeviceEntity.getDeviceToken(), body, title, data,
 							sub1Dto.getType().equalsIgnoreCase("groupchat"));
 				} else {
@@ -396,9 +396,9 @@ public class PushNotificationController {
 				sub15Dto.setSenderImage(dto.getSenderImage());
 				sub15Dto.setGroupJID(dto.getGroupJID() + "@conference." + JiveGlobals.getProperty("xmpp.domain"));
 				data = gson.toJson(sub15Dto);
-				Log.info("Android Call Notification Dto :: " + data);
+				Log.debug("Android Call Notification Dto :: " + data);
 
-				Log.info("****************** Android CASE CALLED");
+				Log.debug("****************** Android CASE CALLED");
 
 				if (!userDeviceEntity.isHuaweiPush()) {
 					SendFCMCallNotification(userDeviceEntity.getDeviceToken(), data);
@@ -420,7 +420,7 @@ public class PushNotificationController {
 				ApnsPayloadBuilder payloadBuilder = null;
 
 				int unreadMessageCount = getUnReadMessagesCount(new JID(userDeviceEntity.getJid())) + 1;
-				Log.info(userDeviceEntity.getJid() + " :: Unread Message Count :: " + unreadMessageCount);
+				Log.debug(userDeviceEntity.getJid() + " :: Unread Message Count :: " + unreadMessageCount);
 				switch (dto.getSubject()) {
 
 				case "1":
@@ -864,20 +864,20 @@ public class PushNotificationController {
 								JiveGlobals.getProperty("push.apns.pass"))
 						.build();
 				final String payload = payloadBuilder.build();
-				Log.info("SendAPNSPushNotification(): deviceToken is : " + deviceToken);
+				Log.debug("SendAPNSPushNotification(): deviceToken is : " + deviceToken);
 				final String token = TokenUtil.sanitizeTokenString(deviceToken);
-				Log.info("SendAPNSPushNotification(): sanitize deviceToken is : " + token);
+				Log.debug("SendAPNSPushNotification(): sanitize deviceToken is : " + token);
 				pushNotification = new SimpleApnsPushNotification(token, "com.gatherhall.app", payload);
 				sendNotificationFuture = apnsClient.sendNotification(pushNotification);
 
 				if (sendNotificationFuture.get().isAccepted()) {
-					Log.info("SendAPNSPushNotification():: Push notification accepted by APNs gateway.");
+					Log.debug("SendAPNSPushNotification():: Push notification accepted by APNs gateway.");
 				} else {
-					Log.info("SendAPNSPushNotification():: Notification rejected by the APNs gateway: "
+					Log.debug("SendAPNSPushNotification():: Notification rejected by the APNs gateway: "
 							+ sendNotificationFuture.get().getRejectionReason());
 
 					if (sendNotificationFuture.get().getTokenInvalidationTimestamp() != null) {
-						Log.info("\t…and the token is invalid as of "
+						Log.debug("\t…and the token is invalid as of "
 								+ sendNotificationFuture.get().getTokenInvalidationTimestamp().get());
 					}
 				}
@@ -892,27 +892,45 @@ public class PushNotificationController {
 						.build();
 				final String payload = payloadBuilder.build();
 
-				Log.info("SendAPNSPushNotification(): deviceToken is : " + deviceToken);
+				Log.debug("SendAPNSPushNotification(): deviceToken is : " + deviceToken);
 				final String token = TokenUtil.sanitizeTokenString(deviceToken);
-				Log.info("SendAPNSPushNotification(): sanitize deviceToken is : " + token);
+				Log.debug("SendAPNSPushNotification(): sanitize deviceToken is : " + token);
 				pushNotification = new SimpleApnsPushNotification(token, "com.gatherhall.app", payload);
 				sendNotificationFuture = apnsClient.sendNotification(pushNotification);
 
 				if (sendNotificationFuture.get().isAccepted()) {
-					Log.info("SendAPNSPushNotification():: Push notification accepted by APNs gateway.");
+					Log.debug("SendAPNSPushNotification():: Push notification accepted by APNs gateway.");
 				} else {
-					Log.info("SendAPNSPushNotification():: Notification rejected by the APNs gateway: "
+					Log.debug("SendAPNSPushNotification():: Notification rejected by the APNs gateway: "
 							+ sendNotificationFuture.get().getRejectionReason());
 
+					Log.debug("Token Invalidation Timestamp is : "
+							+ sendNotificationFuture.get().getTokenInvalidationTimestamp());
+					Log.debug("ApnsId is : " + sendNotificationFuture.get().getApnsId());
+					Log.debug("PushNotification Payload is : "
+							+ sendNotificationFuture.get().getPushNotification().getPayload());
+					Log.debug("PushNotification Token is : "
+							+ sendNotificationFuture.get().getPushNotification().getToken());
+					Log.debug("PushNotification PushType is : "
+							+ sendNotificationFuture.get().getPushNotification().getPushType());
+					Log.debug("PushNotification Topic is : "
+							+ sendNotificationFuture.get().getPushNotification().getTopic());
+					Log.debug("PushNotification Expiration is : "
+							+ sendNotificationFuture.get().getPushNotification().getExpiration());
+					Log.debug("PushNotification Priority is : "
+							+ sendNotificationFuture.get().getPushNotification().getPriority());
+					Log.debug("PushNotification ApnsId is : "
+							+ sendNotificationFuture.get().getPushNotification().getApnsId());
+
 					if (sendNotificationFuture.get().getTokenInvalidationTimestamp() != null) {
-						Log.info("\t…and the token is invalid as of "
+						Log.debug("\t…and the token is invalid as of "
 								+ sendNotificationFuture.get().getTokenInvalidationTimestamp().get());
 					}
 				}
 
 			}
 
-			Log.info("APNS Notification not send Rejection Reason is :: " + sendNotificationFuture.get().getRejectionReason());
+			Log.debug("APNS Notification not send Rejection Reason is :: " + sendNotificationFuture.get().getRejectionReason());
 		} catch (IOException e) {
 			Log.error("Fail to send APNS Alert Push Notification :: " + e.getLocalizedMessage());
 		}
@@ -926,24 +944,24 @@ public class PushNotificationController {
 			HuaweiApp app = InitAppUtils.initializeApp();
 			HuaweiMessaging huaweiMessaging = HuaweiMessaging.getInstance(app);
 
-			Log.info("App ID :: " + app.getAppId());
+			Log.debug("App ID :: " + app.getAppId());
 
 			Message message = null;
 
 			message = Message.builder().setData(data).addToken(deviceToken).build();
 
-			Log.info("Message :: " + new ObjectMapper().writeValueAsString(message));
+			Log.debug("Message :: " + new ObjectMapper().writeValueAsString(message));
 
 			SendResponse response = huaweiMessaging.sendMessage(message);
 
-			Log.info("Response Message :: " + response.getMsg());
-			Log.info("Response Code :: " + response.getCode());
+			Log.debug("Response Message :: " + response.getMsg());
+			Log.debug("Response Code :: " + response.getCode());
 
 		} catch (HuaweiMesssagingException e) {
-			Log.info("Fail to Send Huawei Push Notification" + e.getLocalizedMessage());
+			Log.debug("Fail to Send Huawei Push Notification" + e.getLocalizedMessage());
 			e.printStackTrace();
 		} catch (JsonProcessingException e) {
-			Log.info("Fail to parse message" + e.getLocalizedMessage());
+			Log.debug("Fail to parse message" + e.getLocalizedMessage());
 			e.printStackTrace();
 		}
 	}
@@ -982,11 +1000,11 @@ public class PushNotificationController {
 			ResponseEntity<String> response = restTemplate.exchange(firebaseApiUrl, HttpMethod.POST, request,
 					String.class);
 			String str = response.getBody();
-			Log.info("FCM SENDED DATA :: " + data);
-			Log.info("Response From Rest client :: " + str);
+			Log.debug("FCM SENDED DATA :: " + data);
+			Log.debug("Response From Rest client :: " + str);
 			return null;
 		} catch (Exception e) {
-			Log.info("Fail to Send FCM Push Notification" + e.getLocalizedMessage());
+			Log.debug("Fail to Send FCM Push Notification" + e.getLocalizedMessage());
 			return null;
 		}
 	}
@@ -1006,11 +1024,11 @@ public class PushNotificationController {
 			ResponseEntity<String> response = restTemplate.exchange(firebaseApiUrl, HttpMethod.POST, request,
 					String.class);
 			String str = response.getBody();
-			Log.info("Send Call notification to : " + deviceId);
-			Log.info("Response From Rest client :: " + str);
+			Log.debug("Send Call notification to : " + deviceId);
+			Log.debug("Response From Rest client :: " + str);
 			return null;
 		} catch (Exception e) {
-			Log.info("Fail to Send FCM Push Notification" + e.getLocalizedMessage());
+			Log.debug("Fail to Send FCM Push Notification" + e.getLocalizedMessage());
 			return null;
 		}
 	}
@@ -1024,7 +1042,7 @@ public class PushNotificationController {
 //			JPushClient jpushClient = new JPushClient(masterSecret, appKey);
 //			PushResult pushResult = jpushClient.sendPush(pushPayload);
 //		} catch (Exception e) {
-//			Log.info("Fail to send JPush Push Notification" + e.getLocalizedMessage());
+//			Log.debug("Fail to send JPush Push Notification" + e.getLocalizedMessage());
 //			e.printStackTrace();
 //		}
 //	}
@@ -1079,10 +1097,10 @@ public class PushNotificationController {
 						payloadBuilder.build(), null, priority, pushType, collapseId, apnsId);
 				sendNotificationFuture = apnsClient.sendNotification(voipNotification);
 			}
-			Log.info("APNS VOIP PAYLOD :: " + payloadBuilder.build());
-			Log.info("APNS Voip Notification send successfuly :: " + sendNotificationFuture.get().getRejectionReason());
+			Log.debug("APNS VOIP PAYLOD :: " + payloadBuilder.build());
+			Log.debug("APNS Voip Notification send successfuly :: " + sendNotificationFuture.get().getRejectionReason());
 		} catch (Exception ex) {
-			Log.info("Fail to send APNS Voip Notification :: " + ex.getLocalizedMessage());
+			Log.debug("Fail to send APNS Voip Notification :: " + ex.getLocalizedMessage());
 		}
 	}
 

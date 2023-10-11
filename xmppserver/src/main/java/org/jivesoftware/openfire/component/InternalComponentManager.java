@@ -857,19 +857,19 @@ public class InternalComponentManager extends BasicModule implements ClusterEven
 
         @Override
         public void process(Packet packet) throws PacketException {
+        	Component component = getNextComponent();
             // Custome Code Change for the Broadcast Feature start
-            Component component;
-            if(packet.getTo().toString().equals("all@conference.openfire.gatherhall.com")) {
-                List<Component> broadCastComponents = components.stream().filter((com) -> com.getName().equals("Broadcast")).collect(Collectors.toList());
-                component = broadCastComponents.get(0);
-            } else {
-                component = getNextComponent();
-                if(component.getName().equals("Broadcast")) {
-                    component = getNextComponent();
-                }
-            }
+            // Component component;
+            // if(packet.getTo().toString().equals("all@conference.openfire.gatherhall.com")) {
+            //     List<Component> broadCastComponents = components.stream().filter((com) -> com.getName().equals("Broadcast")).collect(Collectors.toList());
+            //     component = broadCastComponents.get(0);
+            // } else {
+            //     component = getNextComponent();
+            //     if(component.getName().equals("Broadcast")) {
+            //         component = getNextComponent();
+            //     }
+            // }
             // Custome Code Change for the Broadcast Feature End
-
             component.processPacket(packet);
         }
     }

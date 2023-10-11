@@ -3370,7 +3370,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
         else {
             this.lockedTime = 0;
         }
-        MUCPersistenceManager.updateRoomLock((LocalMUCRoom) this);
+        MUCPersistenceManager.updateRoomLock(this);
     }
 
     /**
@@ -3446,7 +3446,7 @@ public class MUCRoom implements GroupEventListener, Externalizable, Result, Cach
      */
     public void saveToDB() {
         // Make the room persistent
-        MUCPersistenceManager.saveToDB((LocalMUCRoom) this);
+        MUCPersistenceManager.saveToDB(this);
         if (!savedToDB) {
             // Set that the room is now in the DB
             savedToDB = true;

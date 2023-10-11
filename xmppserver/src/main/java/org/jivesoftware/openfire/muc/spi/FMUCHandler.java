@@ -1399,6 +1399,7 @@ public class FMUCHandler
             roomSubject.setFrom(this.room.getJID()); // This might break FMUC, as it does not include the nickname of the author of the subject.
             roomSubject.setTo(joiningPeer);
             roomSubject.setType(Message.Type.groupchat);
+            Log.info("Dhaval FMUCHandler 1395");
             roomSubject.setID(UUID.randomUUID().toString());
             final Element subjectEl = roomSubject.getElement().addElement("subject");
             if ( room.getSubject() != null && !room.getSubject().isEmpty() )
